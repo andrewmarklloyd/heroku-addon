@@ -30,11 +30,12 @@ type WebServer struct {
 	logger         *zap.SugaredLogger
 }
 
-func NewWebServer(cryptoUtil crypto.Util, postgresClient postgres.Client, herokuClient heroku.HerokuClient) (WebServer, error) {
+func NewWebServer(logger *zap.SugaredLogger, cryptoUtil crypto.Util, postgresClient postgres.Client, herokuClient heroku.HerokuClient) (WebServer, error) {
 	w := WebServer{
 		cryptoUtil:     cryptoUtil,
 		postgresClient: postgresClient,
 		herokuClient:   herokuClient,
+		logger:         logger,
 	}
 
 	router := gmux.NewRouter().StrictSlash(true)

@@ -40,7 +40,7 @@ func main() {
 
 	herokuClient := heroku.NewHerokuClient(cfg.herokuClientSecret, cfg.herokuAddonUsername, cfg.herokuAddonPassword)
 
-	webServer, err := web.NewWebServer(cryptoUtil, postgresClient, herokuClient)
+	webServer, err := web.NewWebServer(logger, cryptoUtil, postgresClient, herokuClient)
 	if err != nil {
 		logger.Fatalf("creating web server: %w", err)
 	}

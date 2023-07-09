@@ -26,20 +26,22 @@ type WebServer struct {
 	HttpServer     *http.Server
 	cryptoUtil     crypto.Util
 	postgresClient postgres.Client
+	herokuClient   heroku.HerokuClient
 	logger         *zap.SugaredLogger
 }
 
-func NewWebServer(cryptoUtil crypto.Util, postgresClient postgres.Client) (WebServer, error) {
+func NewWebServer(cryptoUtil crypto.Util, postgresClient postgres.Client, herokuClient heroku.HerokuClient) (WebServer, error) {
 	w := WebServer{
 		cryptoUtil:     cryptoUtil,
 		postgresClient: postgresClient,
+		herokuClient:   herokuClient,
 	}
 
 	router := gmux.NewRouter().StrictSlash(true)
 
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
-	router.Handle("/heroku/resources", requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
-	router.Handle("/heroku/resources/{resource_uuid}", requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
+	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
+	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",
@@ -48,6 +50,9 @@ func NewWebServer(cryptoUtil crypto.Util, postgresClient postgres.Client) (WebSe
 	router.PathPrefix("/").Handler(spa)
 
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	server := &http.Server{
 		Handler: router,
 		Addr:    "0.0.0.0:" + port,
@@ -70,7 +75,7 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 
 	s.logger.Infof("starting provision process for %s", payload.UUID)
 
-	oauthResp, err := heroku.ExchangeToken(payload.OauthGrant.Code)
+	oauthResp, err := s.herokuClient.ExchangeToken(payload.OauthGrant.Code)
 	if err != nil {
 		s.logger.Errorf("error exchanging token: %s", err)
 		emptyOauthResp := heroku.OauthResponse{}
@@ -81,7 +86,7 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	id, err := heroku.GetAppId(oauthResp.AccessToken)
+	id, err := s.herokuClient.GetAppId(oauthResp.AccessToken)
 	if err != nil {
 		s.logger.Errorf("error getting app id: %s", err)
 		http.Error(w, `{"error":"error provisioning","status":"failed"}`, http.StatusInternalServerError)
@@ -123,25 +128,14 @@ func (s WebServer) deprovisionHandler(w http.ResponseWriter, req *http.Request) 
 	s.logger.Infof("resource_uuid: %s", vars["resource_uuid"])
 
 	w.WriteHeader(http.StatusNoContent)
+	// TODO: add correct id
 	w.Write([]byte(`{"id":"hello","message":"Your add-on has been deleted."}`))
 
 }
 
-func requireHerokuAuth(next http.Handler) http.Handler {
+func (s *WebServer) requireHerokuAuth(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
-		user := os.Getenv("ADDON_USERNAME")
-		pass := os.Getenv("ADDON_PASSWORD")
-
-		username, password, ok := req.BasicAuth()
-		if !ok {
-			return
-		}
-
-		if username != user {
-			return
-		}
-
-		if password != pass {
+		if !s.herokuClient.ValidateBasicAuth(req) {
 			return
 		}
 

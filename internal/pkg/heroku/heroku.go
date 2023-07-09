@@ -7,9 +7,14 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 )
+
+type HerokuClient struct {
+	clientSecret  string
+	addonUsername string
+	addonPassword string
+}
 
 type ConfigVars struct {
 	Config []Vars `json:"config"`
@@ -20,12 +25,37 @@ type Vars struct {
 	Value string `json:"value"`
 }
 
-func ExchangeToken(code string) (OauthResponse, error) {
+func NewHerokuClient(clientSecret, addonUsername, addonPassword string) HerokuClient {
+	return HerokuClient{
+		clientSecret:  clientSecret,
+		addonUsername: addonUsername,
+		addonPassword: addonPassword,
+	}
+}
+
+func (c *HerokuClient) ValidateBasicAuth(req *http.Request) bool {
+	username, password, ok := req.BasicAuth()
+	if !ok {
+		return false
+	}
+
+	if username != c.addonUsername {
+		return false
+	}
+
+	if password != c.addonPassword {
+		return false
+	}
+
+	return true
+}
+
+func (c *HerokuClient) ExchangeToken(code string) (OauthResponse, error) {
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", code)
 
-	oauthResponse, err := tokenRequest(data)
+	oauthResponse, err := c.tokenRequest(data)
 	if err != nil {
 		return OauthResponse{}, fmt.Errorf("making auth request: %w", err)
 	}
@@ -33,12 +63,12 @@ func ExchangeToken(code string) (OauthResponse, error) {
 	return oauthResponse, nil
 }
 
-func RefreshToken(refreshToken string) (OauthResponse, error) {
+func (c *HerokuClient) RefreshToken(refreshToken string) (OauthResponse, error) {
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", refreshToken)
 
-	oauthResponse, err := tokenRequest(data)
+	oauthResponse, err := c.tokenRequest(data)
 	if err != nil {
 		return OauthResponse{}, fmt.Errorf("making auth request: %w", err)
 	}
@@ -75,8 +105,8 @@ func GetAddonInfo(token, resourceUUID string) error {
 	return nil
 }
 
-func GetAppId(token string) (string, error) {
-	url := fmt.Sprintf("https://api.heroku.com/addons/%s", os.Getenv("ADDON_USERNAME"))
+func (c *HerokuClient) GetAppId(token string) (string, error) {
+	url := fmt.Sprintf("https://api.heroku.com/addons/%s", c.addonUsername)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
@@ -175,8 +205,8 @@ func UpdateConfigVars(token, resourceUUID string, configVars ConfigVars) error {
 	return nil
 }
 
-func authRequest(url string, data url.Values) (string, error) {
-	data.Set("client_secret", os.Getenv("CLIENT_SECRET"))
+func (c *HerokuClient) authRequest(url string, data url.Values) (string, error) {
+	data.Set("client_secret", c.clientSecret)
 
 	client := &http.Client{}
 	r, _ := http.NewRequest(http.MethodPost, url, strings.NewReader(data.Encode()))
@@ -199,8 +229,8 @@ func authRequest(url string, data url.Values) (string, error) {
 	return string(body), nil
 }
 
-func tokenRequest(data url.Values) (OauthResponse, error) {
-	data.Set("client_secret", os.Getenv("CLIENT_SECRET"))
+func (c *HerokuClient) tokenRequest(data url.Values) (OauthResponse, error) {
+	data.Set("client_secret", c.clientSecret)
 
 	client := &http.Client{}
 	r, _ := http.NewRequest(http.MethodPost, "https://id.heroku.com/oauth/token", strings.NewReader(data.Encode()))

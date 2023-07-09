@@ -10,6 +10,7 @@ import (
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/heroku"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/provisioner"
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/spa"
 
 	gmux "github.com/gorilla/mux"
 )
@@ -47,6 +48,12 @@ func newWebServer() (WebServer, error) {
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/heroku/resources", requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
 	router.Handle("/heroku/resources/{resource_uuid}", requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
+
+	spa := spa.SpaHandler{
+		StaticPath: "frontend/build",
+		IndexPath:  "index.html",
+	}
+	router.PathPrefix("/").Handler(spa)
 
 	port := os.Getenv("PORT")
 	server := &http.Server{

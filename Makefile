@@ -10,7 +10,7 @@ build-frontend:
 	cd frontend; npm install; npm run build
 
 build-ci: build build-frontend
-	cp ./build/* .
+	cp ./bin/* .
 
 vet:
 	go vet ./...

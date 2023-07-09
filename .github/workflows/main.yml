@@ -18,7 +18,7 @@ jobs:
           make test
       - name: Run build
         run: |
-          make build
+          make build-ci
       - name: Deploy DO
         env:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}

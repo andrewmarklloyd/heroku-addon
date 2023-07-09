@@ -6,6 +6,12 @@ GIT_TREE_STATE=$(shell (git status --porcelain | grep -q .) && echo $(GIT_REV)-d
 build:
 	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/heroku-addon *.go
 
+build-frontend:
+	cd frontend; npm install; npm run build
+
+build-ci: build build-frontend
+	cp ./build/* .
+
 vet:
 	go vet ./...
 

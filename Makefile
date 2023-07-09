@@ -19,5 +19,5 @@ test:
 	go test ./...
 
 clean:
-	rm -rf build/
+	rm -rf bin/
 	rm -rf frontend/build/

@@ -25,12 +25,12 @@ func BuildConfig() (Server, error) {
 	}
 
 	sessHashKey := os.Getenv("SESSION_SECRET_HASH_KEY")
-	if dbURL == "" {
+	if sessHashKey == "" {
 		err = errors.Join(err, fmt.Errorf("SESSION_SECRET_HASH_KEY env var is not set"))
 	}
 
 	sessEncKey := os.Getenv("SESSION_SECRET_ENCRYPTION_KEY")
-	if dbURL == "" {
+	if sessEncKey == "" {
 		err = errors.Join(err, fmt.Errorf("SESSION_SECRET_HASH_KEY env var is not set"))
 	}
 
@@ -50,17 +50,17 @@ func BuildConfig() (Server, error) {
 	}
 
 	githubClientID := os.Getenv("GITHUB_CLIENT_ID")
-	if herokuClientSecret == "" {
+	if githubClientID == "" {
 		err = errors.Join(err, fmt.Errorf("GITHUB_CLIENT_ID env var is not set"))
 	}
 
 	githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
-	if herokuClientSecret == "" {
+	if githubClientSecret == "" {
 		err = errors.Join(err, fmt.Errorf("GITHUB_CLIENT_SECRET env var is not set"))
 	}
 
 	githubRedirectURL := os.Getenv("GITHUB_REDIRECT_URI")
-	if herokuClientSecret == "" {
+	if githubRedirectURL == "" {
 		err = errors.Join(err, fmt.Errorf("GITHUB_REDIRECT_URI env var is not set"))
 	}
 

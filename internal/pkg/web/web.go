@@ -60,6 +60,8 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router := gmux.NewRouter().StrictSlash(true)
 
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
+	router.Handle("/welcome", http.HandlerFunc(w.tmpHandler)).Methods(get)
+
 	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
 	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
 
@@ -90,6 +92,25 @@ func NewWebServer(logger *zap.SugaredLogger,
 
 	w.HttpServer = server
 	return w, nil
+}
+
+func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`<!DOCTYPE html>
+	<html lang="en">
+	  <head>
+		<title>React App</title>
+	  </head>
+	  <body>
+		<div id="root">
+		  <h1>Welcome, to use this site please login</h1>
+		</div>
+		<button onclick="window.location.href='/';">
+		  Click Here
+		</button>
+	  </body>
+	</html>
+	`))
 }
 
 func (s WebServer) login() http.Handler {

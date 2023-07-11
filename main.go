@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/config"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/crypto"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/heroku"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/postgres"
@@ -13,76 +13,35 @@ import (
 
 var logger *zap.SugaredLogger
 
-type serverConfig struct {
-	encryptionKey       string
-	dbURL               string
-	herokuAddonUsername string
-	herokuAddonPassword string
-	herokuClientSecret  string
-}
-
 func main() {
 	l, _ := zap.NewProduction()
 	logger = l.Sugar().Named("heroku-addon")
 	defer logger.Sync()
 
-	cfg := buildConfig()
+	cfg, err := config.BuildConfig()
+	if err != nil {
+		logger.Fatalln("error building config: %s", err.Error())
+	}
 
-	cryptoUtil, err := crypto.NewUtil(cfg.encryptionKey)
+	cryptoUtil, err := crypto.NewUtil(cfg.DBEncryptionKey)
 	if err != nil {
 		logger.Fatalln(fmt.Errorf("error creating crypto client: %s", err))
 	}
 
-	postgresClient, err := postgres.NewPostgresClient(cfg.dbURL)
+	postgresClient, err := postgres.NewPostgresClient(cfg.PostgresURL)
 	if err != nil {
 		logger.Fatalln(fmt.Errorf("error creating postgres client: %s", err))
 	}
 
-	herokuClient := heroku.NewHerokuClient(cfg.herokuClientSecret, cfg.herokuAddonUsername, cfg.herokuAddonPassword)
+	herokuClient := heroku.NewHerokuClient(cfg.Heroku.ClientSecret, cfg.Heroku.AddonUsername, cfg.Heroku.AddonPassword)
 
-	webServer, err := web.NewWebServer(logger, cryptoUtil, postgresClient, herokuClient)
+	webServer, err := web.NewWebServer(logger, cfg, cryptoUtil, postgresClient, herokuClient)
 	if err != nil {
 		logger.Fatalf("creating web server: %w", err)
 	}
 
-	logger.Info("started web server")
 	err = webServer.HttpServer.ListenAndServe()
 	if err != nil {
 		logger.Fatalf("starting web server: %w", err)
-	}
-}
-
-func buildConfig() serverConfig {
-	encKey := os.Getenv("ENCRYPTION_KEY")
-	if encKey == "" {
-		logger.Fatalln("ENCRYPTION_KEY env var is not set")
-	}
-
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		logger.Fatalln("DATABASE_URL env var is not set")
-	}
-
-	herokuAddonUsername := os.Getenv("HEROKU_ADDON_USERNAME")
-	if herokuAddonUsername == "" {
-		logger.Fatalln("HEROKU_ADDON_USERNAME env var is not set")
-	}
-
-	herokuAddonPassword := os.Getenv("HEROKU_ADDON_PASSWORD")
-	if herokuAddonPassword == "" {
-		logger.Fatalln("HEROKU_ADDON_PASSWORD env var is not set")
-	}
-
-	herokuClientSecret := os.Getenv("HEROKU_CLIENT_SECRET")
-	if herokuClientSecret == "" {
-		logger.Fatalln("HEROKU_CLIENT_SECRET env var is not set")
-	}
-
-	return serverConfig{
-		encryptionKey:       encKey,
-		dbURL:               dbURL,
-		herokuAddonUsername: herokuAddonUsername,
-		herokuAddonPassword: herokuAddonPassword,
-		herokuClientSecret:  herokuClientSecret,
 	}
 }

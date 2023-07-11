@@ -81,7 +81,8 @@ func NewWebServer(logger *zap.SugaredLogger,
 		StaticPath: "frontend/build",
 		IndexPath:  "index.html",
 	}
-	router.PathPrefix("/").Handler(spa)
+
+	router.PathPrefix("/").Handler(w.requireLogin(spa))
 
 	addr := fmt.Sprintf("0.0.0.0:%s", cfg.Port)
 	logger.Infof("starting web server on address %s", addr)
@@ -105,7 +106,7 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 		<div id="root">
 		  <h1>Welcome, to use this site please login</h1>
 		</div>
-		<button onclick="window.location.href='/';">
+		<button onclick="window.location.href='/github/login';">
 		  Click Here
 		</button>
 	  </body>
@@ -118,14 +119,16 @@ func (s WebServer) login() http.Handler {
 		ctx := req.Context()
 		user, err := github.UserFromContext(ctx)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			s.logger.Errorf("getting user from context: %s", err)
+			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}
 
 		session := s.sessions.New("heroku-addon")
 		session.Set("user-id", *user.Email)
 		if err := session.Save(w); err != nil {
-			http.Error(w, "could not create session", http.StatusInternalServerError)
+			s.logger.Errorf("saving session: %s", err)
+			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}
 
@@ -137,19 +140,21 @@ func (s WebServer) login() http.Handler {
 
 func (s WebServer) requireLogin(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
-		session, err := s.sessions.Get(req, "my-app")
+		session, err := s.sessions.Get(req, "heroku-addon")
+
 		if err != nil {
-			http.Error(w, "missing session", http.StatusUnauthorized)
+			s.logger.Errorf("could not get session: %s", err)
+			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}
 
-		userID, present := session.GetOk("user-id")
+		_, present := session.GetOk("user-id")
 		if !present {
-			http.Error(w, "missing user-id", http.StatusUnauthorized)
+			s.logger.Errorf("could not get user-id: %s", err)
+			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}
 
-		fmt.Println(userID)
 		next.ServeHTTP(w, req)
 
 	}

@@ -6,4 +6,4 @@ cd frontend
 npm run build
 cd ../
 
-op run --env-file=".env.server.tmpl" -- go run *.go
+op run --env-file=".env.server-staging.tmpl" -- go run *.go

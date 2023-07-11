@@ -76,6 +76,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/github/login", github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil)))
 	router.Handle("/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, w.login(), nil)))
+	router.Handle("/logout", w.requireLogin(w.logout()))
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",
@@ -134,6 +135,14 @@ func (s WebServer) login() http.Handler {
 
 		http.Redirect(w, req, "/", http.StatusFound)
 
+	}
+	return http.HandlerFunc(fn)
+}
+
+func (s WebServer) logout() http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		s.sessions.Destroy(w, "heroku-addon")
+		http.Redirect(w, req, "/welcome", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
 }

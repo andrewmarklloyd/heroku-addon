@@ -33,7 +33,7 @@ func main() {
 		logger.Fatalln(fmt.Errorf("error creating postgres client: %s", err))
 	}
 
-	herokuClient := heroku.NewHerokuClient(cfg.Heroku.ClientSecret, cfg.Heroku.AddonUsername, cfg.Heroku.AddonPassword)
+	herokuClient := heroku.NewHerokuClient(cfg.Heroku.ClientSecret, cfg.Heroku.AddonUsername, cfg.Heroku.AddonPassword, cfg.Heroku.SSOSalt)
 
 	webServer, err := web.NewWebServer(logger, cfg, cryptoUtil, postgresClient, herokuClient)
 	if err != nil {

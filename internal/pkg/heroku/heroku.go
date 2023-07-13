@@ -2,6 +2,7 @@ package heroku
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ type HerokuClient struct {
 	clientSecret  string
 	addonUsername string
 	addonPassword string
+	ssoSalt       string
 }
 
 type ConfigVars struct {
@@ -25,7 +27,7 @@ type Vars struct {
 	Value string `json:"value"`
 }
 
-func NewHerokuClient(clientSecret, addonUsername, addonPassword string) HerokuClient {
+func NewHerokuClient(clientSecret, addonUsername, addonPassword, ssoSalt string) HerokuClient {
 	return HerokuClient{
 		clientSecret:  clientSecret,
 		addonUsername: addonUsername,
@@ -48,6 +50,29 @@ func (c *HerokuClient) ValidateBasicAuth(req *http.Request) bool {
 	}
 
 	return true
+}
+
+func (c *HerokuClient) ValidateSSO(req *http.Request) error {
+	// token := req.FormValue("token")
+	// context_app := req.FormValue("context_app")
+	// app := req.FormValue("app")
+	// id := req.FormValue("id")
+	// email := req.FormValue("email")
+	// user_id := req.FormValue("user_id")
+
+	timestamp := req.FormValue("timestamp")
+	resourceId := req.FormValue("resource_id")
+	resourceToken := req.FormValue("resource_token")
+
+	hasher := sha1.New()
+	hasher.Write([]byte(fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp)))
+	sha := hasher.Sum(nil)
+
+	if string(sha) != resourceToken {
+		return fmt.Errorf("generated resource token did not match posted resource token")
+	}
+
+	return nil
 }
 
 func (c *HerokuClient) ExchangeToken(code string) (OauthResponse, error) {

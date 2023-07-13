@@ -1,18 +1,26 @@
-import logo from './logo.svg';
 import ResponsiveAppBar from './components/appBar';
-import './App.css';
+import InstanceTable from './components/instanceTable';
+
+
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 function App() {
   return (
-    <div className="App">
+    <ThemeProvider theme={darkTheme}>
       <ResponsiveAppBar></ResponsiveAppBar>
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <h1>
-          My Great Product
-        </h1>
-      </header>
-    </div>
+      <CssBaseline />
+      <main>
+        <h1>Instances</h1>
+        <InstanceTable></InstanceTable>
+      </main>
+    </ThemeProvider>
   );
 }
 

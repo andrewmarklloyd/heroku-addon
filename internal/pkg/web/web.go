@@ -152,7 +152,7 @@ func (s WebServer) requireLogin(next http.Handler) http.Handler {
 		session, err := s.sessions.Get(req, "heroku-addon")
 
 		if err != nil {
-			s.logger.Errorf("could not get session: %s", err)
+			// s.logger.Errorf("could not get session: %s", err)
 			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}

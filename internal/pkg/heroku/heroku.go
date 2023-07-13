@@ -3,6 +3,7 @@ package heroku
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -69,8 +70,8 @@ func (c *HerokuClient) ValidateSSO(req *http.Request) (SSOUser, error) {
 	}
 
 	hasher := sha1.New()
-	io.WriteString(hasher, fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp))
-	sha := hasher.Sum(nil)
+	hasher.Write([]byte(fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp)))
+	sha := hex.EncodeToString(hasher.Sum(nil))
 
 	if string(sha) != resourceToken {
 		return SSOUser{}, fmt.Errorf("generated resource token %s did not match posted resource token %s", string(sha), resourceToken)

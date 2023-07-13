@@ -46,3 +46,9 @@ type AddonInfo struct {
 		Name string `json:"name"`
 	} `json:"app"`
 }
+
+type SSOUser struct {
+	Email  string
+	UserID string
+	App    string
+}

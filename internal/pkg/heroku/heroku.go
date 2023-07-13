@@ -52,27 +52,48 @@ func (c *HerokuClient) ValidateBasicAuth(req *http.Request) bool {
 	return true
 }
 
-func (c *HerokuClient) ValidateSSO(req *http.Request) error {
-	// token := req.FormValue("token")
-	// context_app := req.FormValue("context_app")
-	// app := req.FormValue("app")
-	// id := req.FormValue("id")
-	// email := req.FormValue("email")
-	// user_id := req.FormValue("user_id")
+func (c *HerokuClient) ValidateSSO(req *http.Request) (SSOUser, error) {
+	req.ParseForm()
 
 	timestamp := req.FormValue("timestamp")
+	if timestamp == "" {
+		return SSOUser{}, fmt.Errorf("timestamp not found in form data")
+	}
 	resourceId := req.FormValue("resource_id")
+	if resourceId == "" {
+		return SSOUser{}, fmt.Errorf("resource_id not found in form data")
+	}
 	resourceToken := req.FormValue("resource_token")
+	if resourceToken == "" {
+		return SSOUser{}, fmt.Errorf("resource_token not found in form data")
+	}
 
 	hasher := sha1.New()
-	hasher.Write([]byte(fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp)))
+	io.WriteString(hasher, fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp))
 	sha := hasher.Sum(nil)
 
 	if string(sha) != resourceToken {
-		return fmt.Errorf("generated resource token did not match posted resource token")
+		return SSOUser{}, fmt.Errorf("generated resource token %s did not match posted resource token %s", string(sha), resourceToken)
 	}
 
-	return nil
+	app := req.FormValue("app")
+	if app == "" {
+		return SSOUser{}, fmt.Errorf("app not found in form data")
+	}
+	email := req.FormValue("email")
+	if email == "" {
+		return SSOUser{}, fmt.Errorf("email not found in form data")
+	}
+	userId := req.FormValue("user_id")
+	if userId == "" {
+		return SSOUser{}, fmt.Errorf("user_id not found in form data")
+	}
+
+	return SSOUser{
+		App:    app,
+		Email:  email,
+		UserID: userId,
+	}, nil
 }
 
 func (c *HerokuClient) ExchangeToken(code string) (OauthResponse, error) {

@@ -99,9 +99,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 }
 
 func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-
-	err := s.herokuClient.ValidateSSO(req)
+	ssoUser, err := s.herokuClient.ValidateSSO(req)
 	if err != nil {
 		s.logger.Errorf("validating heroku sso: %w", err)
 		w.WriteHeader(http.StatusForbidden)
@@ -109,8 +107,16 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusForbidden)
-	w.Write([]byte(`<!DOCTYPE html><html><h1>forbidden</h1></html>`))
+	session := s.sessions.New("heroku-addon")
+	session.Set("user-id", ssoUser.Email)
+	session.Set("provenance", "heroku")
+	if err := session.Save(w); err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(`<!DOCTYPE html><html><h1>forbidden</h1></html>`))
+		return
+	}
+
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
@@ -144,6 +150,7 @@ func (s WebServer) login() http.Handler {
 
 		session := s.sessions.New("heroku-addon")
 		session.Set("user-id", *user.Email)
+		session.Set("provenance", "github")
 		if err := session.Save(w); err != nil {
 			s.logger.Errorf("saving session: %s", err)
 			http.Redirect(w, req, "/welcome", http.StatusFound)

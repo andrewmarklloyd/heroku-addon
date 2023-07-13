@@ -49,6 +49,11 @@ func BuildConfig() (Server, error) {
 		err = errors.Join(err, fmt.Errorf("HEROKU_CLIENT_SECRET env var is not set"))
 	}
 
+	herokuSSOSalt := os.Getenv("HEROKU_SSO_SALT")
+	if herokuSSOSalt == "" {
+		err = errors.Join(err, fmt.Errorf("HEROKU_SSO_SALT env var is not set"))
+	}
+
 	githubClientID := os.Getenv("GITHUB_CLIENT_ID")
 	if githubClientID == "" {
 		err = errors.Join(err, fmt.Errorf("GITHUB_CLIENT_ID env var is not set"))
@@ -80,6 +85,7 @@ func BuildConfig() (Server, error) {
 			AddonUsername: herokuAddonUsername,
 			AddonPassword: herokuAddonPassword,
 			ClientSecret:  herokuClientSecret,
+			SSOSalt:       herokuSSOSalt,
 		},
 		Github: Github{
 			ClientID:     githubClientID,

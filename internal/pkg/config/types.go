@@ -25,4 +25,5 @@ type Heroku struct {
 	AddonUsername string
 	AddonPassword string
 	ClientSecret  string
+	SSOSalt       string
 }

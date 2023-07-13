@@ -65,6 +65,8 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
 	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
 
+	router.Handle("/heroku/sso/login", http.HandlerFunc(w.herokuSSOHandler)).Methods(post)
+
 	store := sessions.NewCookieStore[string](
 		sessions.DefaultCookieConfig,
 		[]byte(cfg.SessionSecret.HashKey),
@@ -94,6 +96,16 @@ func NewWebServer(logger *zap.SugaredLogger,
 
 	w.HttpServer = server
 	return w, nil
+}
+
+func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	for k, v := range req.Form {
+		fmt.Println(k, "=", v)
+	}
+
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`<!DOCTYPE html><html><h1>forbidden</h1></html>`))
 }
 
 func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {

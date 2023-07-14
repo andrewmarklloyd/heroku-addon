@@ -9,7 +9,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type HerokuClient struct {
@@ -33,6 +35,7 @@ func NewHerokuClient(clientSecret, addonUsername, addonPassword, ssoSalt string)
 		clientSecret:  clientSecret,
 		addonUsername: addonUsername,
 		addonPassword: addonPassword,
+		ssoSalt:       ssoSalt,
 	}
 }
 
@@ -69,7 +72,18 @@ func (c *HerokuClient) ValidateSSO(req *http.Request) (SSOUser, error) {
 		return SSOUser{}, fmt.Errorf("resource_token not found in form data")
 	}
 
-	fmt.Println(resourceId, timestamp)
+	now := time.Now()
+	fiveMinAgo := now.Add(-5 * time.Minute)
+	i, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		return SSOUser{}, fmt.Errorf("parsing int from timestamp payload: %w", err)
+	}
+	tm := time.Unix(i, 0)
+
+	if tm.Before(fiveMinAgo) {
+		return SSOUser{}, fmt.Errorf("timestamp is older than 5 minutes: %w", err)
+	}
+
 	hasher := sha1.New()
 	hasher.Write([]byte(fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp)))
 	sha := hex.EncodeToString(hasher.Sum(nil))
@@ -143,8 +157,6 @@ func GetAddonInfo(token, resourceUUID string) error {
 	if err != nil {
 		return fmt.Errorf("reading response body from heroku: %s", err)
 	}
-
-	fmt.Println(string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("response from heroku, receieved status code: %d, response: %s", resp.StatusCode, string(body))

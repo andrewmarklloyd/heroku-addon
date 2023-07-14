@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,6 +28,10 @@ const (
 	get    = "get"
 	delete = "delete"
 )
+
+type ContextKey string
+
+const ContextProvenanceKey ContextKey = "provenance"
 
 type WebServer struct {
 	HttpServer     *http.Server
@@ -57,6 +62,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 		Scopes:       []string{"profile", "email"},
 	}
 
+	// todo: make adding routes easier to see
 	router := gmux.NewRouter().StrictSlash(true)
 
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
@@ -78,6 +84,8 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/github/login", github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil)))
 	router.Handle("/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, w.login(), nil)))
 	router.Handle("/logout", w.requireLogin(w.logout()))
+
+	router.Handle("/api/user", w.requireLogin(w.getUser())).Methods(get)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",
@@ -171,17 +179,25 @@ func (s WebServer) logout() http.Handler {
 }
 
 func (s WebServer) requireLogin(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, req *http.Request) {
-		session, err := s.sessionStore.Get(req, "heroku-addon")
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		session, err := s.sessionStore.Get(r, "heroku-addon")
 
 		if err != nil {
 			// s.logger.Errorf("could not get session: %s", err)
-			http.Redirect(w, req, "/welcome", http.StatusFound)
+			http.Redirect(w, r, "/welcome", http.StatusFound)
 			return
 		}
 
-		provenance, _ := session.GetOk("provenance")
-		s.logger.Infof("session provenance: %s", provenance)
+		provenance, ok := session.GetOk("provenance")
+		if !ok {
+			s.logger.Errorf("could not get provenance from context")
+			http.Redirect(w, r, "/welcome", http.StatusFound)
+			return
+		}
+
+		ctx := r.Context()
+		req := r.WithContext(context.WithValue(ctx, ContextProvenanceKey, provenance))
+		*r = *req
 
 		_, present := session.GetOk("user-id")
 		if !present {

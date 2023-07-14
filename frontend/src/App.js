@@ -12,6 +12,19 @@ const darkTheme = createTheme({
 });
 
 function App() {
+  fetch("/api/user", {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    referrerPolicy: 'no-referrer'
+  })
+  .then(r => r.text())
+  .then(r => {
+    console.log(r)
+  })
+
   return (
     <ThemeProvider theme={darkTheme}>
       <ResponsiveAppBar></ResponsiveAppBar>

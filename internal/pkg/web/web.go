@@ -180,6 +180,9 @@ func (s WebServer) requireLogin(next http.Handler) http.Handler {
 			return
 		}
 
+		provenance, _ := session.GetOk("provenance")
+		s.logger.Infof("session provenance: %s", provenance)
+
 		_, present := session.GetOk("user-id")
 		if !present {
 			s.logger.Errorf("could not get user-id: %s", err)

@@ -101,7 +101,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 	ssoUser, err := s.herokuClient.ValidateSSO(req)
 	if err != nil {
-		s.logger.Errorf("validating heroku sso: %w", err)
+		s.logger.Errorf("validating heroku sso: %s", err)
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte(`<!DOCTYPE html><html><h1>forbidden</h1></html>`))
 		return

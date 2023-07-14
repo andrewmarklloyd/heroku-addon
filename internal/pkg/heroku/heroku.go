@@ -69,6 +69,7 @@ func (c *HerokuClient) ValidateSSO(req *http.Request) (SSOUser, error) {
 		return SSOUser{}, fmt.Errorf("resource_token not found in form data")
 	}
 
+	fmt.Println(resourceId, timestamp)
 	hasher := sha1.New()
 	hasher.Write([]byte(fmt.Sprintf("%s:%s:%s", resourceId, c.ssoSalt, timestamp)))
 	sha := hex.EncodeToString(hasher.Sum(nil))

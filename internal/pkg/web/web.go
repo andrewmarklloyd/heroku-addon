@@ -107,6 +107,7 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	fmt.Println(s.sessions)
 	session := s.sessions.New("heroku-addon")
 	session.Set("user-id", ssoUser.Email)
 	session.Set("provenance", "heroku")

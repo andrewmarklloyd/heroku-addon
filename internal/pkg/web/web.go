@@ -33,7 +33,7 @@ type WebServer struct {
 	cryptoUtil     crypto.Util
 	postgresClient postgres.Client
 	herokuClient   heroku.HerokuClient
-	sessions       sessions.Store[string]
+	sessionStore   sessions.Store[string]
 	logger         *zap.SugaredLogger
 }
 
@@ -65,15 +65,14 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
 	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
 
-	router.Handle("/heroku/sso/login", http.HandlerFunc(w.herokuSSOHandler)).Methods(post)
-
 	store := sessions.NewCookieStore[string](
 		sessions.DefaultCookieConfig,
 		[]byte(cfg.SessionSecret.HashKey),
 		[]byte(cfg.SessionSecret.EncryptionKey),
 	)
 
-	w.sessions = store
+	w.sessionStore = store
+	router.Handle("/heroku/sso/login", http.HandlerFunc(w.herokuSSOHandler)).Methods(post)
 
 	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/github/login", github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil)))
@@ -107,8 +106,7 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Println(s.sessions)
-	session := s.sessions.New("heroku-addon")
+	session := s.sessionStore.New("heroku-addon")
 	session.Set("user-id", ssoUser.Email)
 	session.Set("provenance", "heroku")
 	if err := session.Save(w); err != nil {
@@ -149,7 +147,7 @@ func (s WebServer) login() http.Handler {
 			return
 		}
 
-		session := s.sessions.New("heroku-addon")
+		session := s.sessionStore.New("heroku-addon")
 		session.Set("user-id", *user.Email)
 		session.Set("provenance", "github")
 		if err := session.Save(w); err != nil {
@@ -166,7 +164,7 @@ func (s WebServer) login() http.Handler {
 
 func (s WebServer) logout() http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
-		s.sessions.Destroy(w, "heroku-addon")
+		s.sessionStore.Destroy(w, "heroku-addon")
 		http.Redirect(w, req, "/welcome", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
@@ -174,7 +172,7 @@ func (s WebServer) logout() http.Handler {
 
 func (s WebServer) requireLogin(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
-		session, err := s.sessions.Get(req, "heroku-addon")
+		session, err := s.sessionStore.Get(req, "heroku-addon")
 
 		if err != nil {
 			// s.logger.Errorf("could not get session: %s", err)

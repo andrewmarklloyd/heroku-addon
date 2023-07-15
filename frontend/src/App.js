@@ -1,9 +1,9 @@
+import { useEffect, useState } from 'react';
 import ResponsiveAppBar from './components/appBar';
-import InstanceTable from './components/instanceTable';
-
-
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import Home from "./pages/Home";
 
 const darkTheme = createTheme({
   palette: {
@@ -11,28 +11,33 @@ const darkTheme = createTheme({
   },
 });
 
-function App() {
-  fetch("/api/user", {
-    method: 'GET',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    referrerPolicy: 'no-referrer'
-  })
-  .then(r => r.text())
-  .then(r => {
-    console.log(r)
-  })
+const App = () => {
+  var [user, setUser] = useState({user: {}});
+
+  useEffect(() => {
+    fetch("/api/user", {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        referrerPolicy: 'no-referrer'
+      })
+      .then(r => r.json())
+      .then(r => {
+        setUser(state => ({ ...state, user: {provenance: r.provenance} }));
+      })
+  }, [])
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <ResponsiveAppBar></ResponsiveAppBar>
+      <ResponsiveAppBar user={user}></ResponsiveAppBar>
       <CssBaseline />
-      <main>
-        <h1>Instances</h1>
-        <InstanceTable></InstanceTable>
-      </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />}/>
+      </Routes>
+    </BrowserRouter>
     </ThemeProvider>
   );
 }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 export PORT=8080
 
 cd frontend

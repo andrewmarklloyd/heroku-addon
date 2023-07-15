@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import InstanceTable from '../components/InstanceTable';
+import InstanceTable from '../components/InstanceTable.js';
 
 const Home = () => {
   return (

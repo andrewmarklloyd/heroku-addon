@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Home from "./pages/Home";
+import Account from "./pages/Account";
 
 const darkTheme = createTheme({
   palette: {
@@ -36,6 +37,7 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />}/>
+        <Route path="/account" element={<Account />}/>
       </Routes>
     </BrowserRouter>
     </ThemeProvider>

@@ -32,14 +32,17 @@ const ResponsiveAppBar = (props) => {
     setAnchorElUser(null);
   };
 
+  const handleAccount = () => {
+    window.location.href = "/account";
+  };
+
   const handleLogout = () => {
     window.location.href = "/logout";
   };
 
   var settings = {
     'Profile': handleCloseUserMenu,
-    'Account': handleCloseUserMenu,
-    'Dashboard': handleCloseUserMenu
+    'Account': handleAccount
   }
 
   if (props.user.provenance !== "" && props.user.provenance !== "heroku") {

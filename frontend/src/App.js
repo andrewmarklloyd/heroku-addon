@@ -25,6 +25,7 @@ const App = () => {
       })
       .then(r => r.json())
       .then(r => {
+        console.log("user api response:",r)
         setUser(state => ({ ...state, user: {provenance: r.provenance} }));
       })
   }, [])

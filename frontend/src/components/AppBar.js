@@ -41,6 +41,7 @@ const ResponsiveAppBar = (props) => {
     'Dashboard': handleCloseUserMenu
   };
 
+  console.log("in app bar: ", props.user)
   if (props.user.provenance !== "heroku") {
     settings["Logout"] = handleLogout
   }

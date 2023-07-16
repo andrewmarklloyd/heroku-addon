@@ -13,7 +13,6 @@ import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 
 const ResponsiveAppBar = (props) => {
-  console.log(props.user)
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
 
@@ -36,12 +35,15 @@ const ResponsiveAppBar = (props) => {
     window.location.href = "/logout";
   };
 
-  const newsettings = {
+  const settings = {
     'Profile': handleCloseUserMenu,
     'Account': handleCloseUserMenu,
-    'Dashboard': handleCloseUserMenu,
-    'Logout': handleLogout
+    'Dashboard': handleCloseUserMenu
   };
+
+  if (props.user.provenance !== "heroku") {
+    settings["Logout"] = handleLogout
+  }
 
   return (
     <AppBar position="static">
@@ -141,8 +143,8 @@ const ResponsiveAppBar = (props) => {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              {Object.keys(newsettings).map((key, index) => (
-                <MenuItem key={key} onClick={newsettings[key]}>
+              {Object.keys(settings).map((key, index) => (
+                <MenuItem key={key} onClick={settings[key]}>
                   <Typography textAlign="center">{key}</Typography>
                 </MenuItem>
               ))}

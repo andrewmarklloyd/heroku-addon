@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import ResponsiveAppBar from './components/appBar';
+import ResponsiveAppBar from './components/AppBar';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';

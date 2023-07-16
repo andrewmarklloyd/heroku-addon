@@ -12,7 +12,7 @@ const darkTheme = createTheme({
 });
 
 const App = () => {
-  var [user, setUser] = useState({user: {}});
+  var [user, setUser] = useState({});
 
   useEffect(() => {
     fetch("/api/user", {
@@ -26,7 +26,7 @@ const App = () => {
       .then(r => r.json())
       .then(r => {
         console.log("user api response:",r)
-        setUser(state => ({ ...state, user: {provenance: r.provenance} }));
+        setUser(state => ({ ...state, provenance: r.provenance }));
       })
   }, [])
 

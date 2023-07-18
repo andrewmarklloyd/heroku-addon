@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/config"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/crypto"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/heroku"
@@ -250,7 +251,15 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, payload.UUID, ownerEmail, oauthResp.AccessToken, oauthResp.RefreshToken)
+	account := account.Account{
+		UUID:         payload.UUID,
+		Email:        ownerEmail,
+		AccountType:  account.AccountTypeHeroku,
+		PlanType:     account.PlanTypeFree, // TODO: use payload.Plan
+		AccessToken:  oauthResp.AccessToken,
+		RefreshToken: oauthResp.RefreshToken,
+	}
+	err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, account)
 	if err != nil {
 		s.logger.Errorf("error creating account: %s", err)
 		http.Error(w, `{"error":"error provisioning","status":"failed"}`, http.StatusInternalServerError)

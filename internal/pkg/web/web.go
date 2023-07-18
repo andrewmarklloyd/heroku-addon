@@ -83,7 +83,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 
 	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/github/login", github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil)))
-	router.Handle("/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, w.login(), nil)))
+	router.Handle("/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, w.loginGithub(), nil)))
 	router.Handle("/logout", w.requireLogin(w.logout()))
 
 	router.Handle("/api/user", w.requireLogin(w.getUser())).Methods(get)
@@ -146,7 +146,7 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 	`))
 }
 
-func (s WebServer) login() http.Handler {
+func (s WebServer) loginGithub() http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		user, err := github.UserFromContext(ctx)
@@ -164,6 +164,8 @@ func (s WebServer) login() http.Handler {
 			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}
+
+		// create account
 
 		http.Redirect(w, req, "/", http.StatusFound)
 

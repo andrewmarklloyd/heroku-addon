@@ -87,6 +87,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/logout", w.requireLogin(w.logout()))
 
 	router.Handle("/api/user", w.requireLogin(w.getUser())).Methods(get)
+	router.Handle("/api/instances", w.requireLogin(w.getInstances())).Methods(get)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -7,13 +8,7 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { Button } from '@mui/material';
 
-const rows = [
-    createData('pi-sensor', "Free", "192743"),
-    createData('heroku-db', "Staging", "825782"),
-    createData('my-controller', "Production", "386295"),
-  ];
-
-const InstanceTable = () => {
+const InstanceTable = (props) => {
     return (
         <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -25,7 +20,7 @@ const InstanceTable = () => {
             </TableRow>
             </TableHead>
             <TableBody>
-            {rows.map((row) => (
+            {props.instances.map((row) => (
                 <TableRow
                 key={row.name}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -33,7 +28,7 @@ const InstanceTable = () => {
                 <TableCell component="th" scope="row">
                     <Button variant="text">{row.name}</Button>
                 </TableCell>
-                <TableCell align="left">{row.plan}</TableCell>
+                <TableCell align="left">{row.plan.toUpperCase()}</TableCell>
                 <TableCell align="right">
                     <Button href={"/instance/"+row.id+"/edit"}>Edit</Button>
                 </TableCell>
@@ -44,11 +39,5 @@ const InstanceTable = () => {
         </TableContainer>
     );
 }
-
-
-function createData(name, plan, id) {
-    return { name, plan, id };
-}
-
 
 export default InstanceTable;

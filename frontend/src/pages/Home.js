@@ -4,8 +4,6 @@ import { Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@m
 import InstanceTable from '../components/InstanceTable';
 
 const Home = (props) => {
-  var email = props.user.email
-  var userID = props.user.userID
   var [instances, setInstances] = useState([]);
   var [newInstanceName, setNewInstanceName] = useState('');
   var [newInstancePlan, setNewInstancePlan] = useState('');

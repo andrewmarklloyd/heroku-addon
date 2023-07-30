@@ -1,27 +1,117 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
+	"github.com/google/uuid"
 )
 
-func (s WebServer) getUser() http.Handler {
-	fn := func(w http.ResponseWriter, req *http.Request) {
-		provenance := req.Context().Value(ContextProvenanceKey)
-		p, ok := provenance.(string)
-		if !ok || p == "" {
-			s.logger.Errorf("provenance from context is not string or was empty")
-			http.Error(w, "could not get user", http.StatusBadRequest)
-			return
-		}
-		fmt.Fprintf(w, `{"provenance":"%s"}`, p)
+func (s WebServer) getUser(w http.ResponseWriter, req *http.Request) {
+	userID, email, provenance, err := s.getUserInfo(req)
+	if err != nil {
+		s.logger.Errorf("getting user info: %s", err)
+		http.Error(w, "could not get user", http.StatusBadRequest)
+		return
 	}
-	return http.HandlerFunc(fn)
+
+	fmt.Fprintf(w, `{"provenance":"%s","email":"%s","userID":"%s"}`, provenance, email, userID)
 }
 
-func (s WebServer) getInstances() http.Handler {
-	fn := func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, `[{"id":"a061249b-8080-4e31-8507-92e1617c7f24","plan":"free","name":"pi-sensor"},{"id":"12f7dd3c-9c16-412b-bf8a-4f65b1844b16","plan":"staging","name":"heroku-db"},{"id":"eff3d0d1-2f88-4b78-9c6e-8d7df3d5aa2b","plan":"production","name":"my-controller"}]`)
+func (s WebServer) getInstances(w http.ResponseWriter, req *http.Request) {
+
+	userID, _, _, err := s.getUserInfo(req)
+	if err != nil {
+		s.logger.Errorf("getting user info: %s", err)
+		http.Error(w, "could not get user", http.StatusBadRequest)
+		return
 	}
-	return http.HandlerFunc(fn)
+
+	instances, err := s.postgresClient.GetInstances(userID)
+	if err != nil {
+		s.logger.Errorf("getting instances from postgres: %s", err)
+		http.Error(w, "could not instances", http.StatusInternalServerError)
+		return
+	}
+
+	iJson, err := json.Marshal(instances)
+	if err != nil {
+		s.logger.Errorf("marshalling instances to json: %s", err)
+		http.Error(w, "could not instances", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, string(iJson))
+}
+
+func (s WebServer) newInstance(w http.ResponseWriter, req *http.Request) {
+	userID, _, provenance, err := s.getUserInfo(req)
+	if err != nil {
+		s.logger.Errorf("getting user info: %s", err)
+		http.Error(w, "could not get user", http.StatusBadRequest)
+		return
+	}
+
+	if provenance == "heroku" {
+		s.logger.Errorf("heroku user cannot create instances")
+		http.Error(w, `{"error":"heroku user cannot create instances"}`, http.StatusBadRequest)
+		return
+	}
+
+	type instanceRequest struct {
+		Name string `json:"name"`
+		Plan string `json:"plan"`
+	}
+	var ir instanceRequest
+	err = json.NewDecoder(req.Body).Decode(&ir)
+	if err != nil {
+		http.Error(w, `{"error":"parsing request"}`, http.StatusBadRequest)
+		return
+	}
+
+	if ir.Name == "" || ir.Plan == "" {
+		http.Error(w, `{"error":"name and plan are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	a := account.Instance{
+		AccountID: userID,
+		Id:        uuid.New().String(),
+		Plan:      ir.Plan,
+		Name:      ir.Name,
+	}
+
+	err = s.postgresClient.CreateOrUpdateInstance(a)
+	if err != nil {
+		s.logger.Errorf("creating instance: %s", err)
+		http.Error(w, `{"error":"saving instance to database"}`, http.StatusBadRequest)
+		return
+	}
+	fmt.Fprint(w, `{"status":"success"}`)
+}
+
+func (s WebServer) getUserInfo(req *http.Request) (string, string, string, error) {
+	session, err := s.sessionStore.Get(req, "heroku-addon")
+	if err != nil {
+		return "", "", "", fmt.Errorf("could not get session: %w", err)
+	}
+
+	userID, ok := session.GetOk("user-id")
+	if !ok {
+		return "", "", "", fmt.Errorf("user-id from session was not found")
+	}
+
+	email, ok := session.GetOk("user-email")
+	if !ok {
+		return "", "", "", fmt.Errorf("user-email from session was not found")
+	}
+
+	provenance, ok := session.GetOk("provenance")
+	if !ok {
+		return "", "", "", fmt.Errorf("provenance from session was not found")
+	}
+
+	return userID, email, provenance, nil
 }

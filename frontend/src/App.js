@@ -26,7 +26,11 @@ const App = () => {
       })
       .then(r => r.json())
       .then(r => {
-        setUser(state => ({ ...state, provenance: r.provenance }));
+        setUser(state => ({ ...state, 
+          provenance: r.provenance,
+          email: r.email,
+          userID: r.userID
+        }));
       })
   }, [])
 
@@ -36,7 +40,7 @@ const App = () => {
       <CssBaseline />
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />}/>
+        <Route path="/" element={<Home user={user}/>}/>
         <Route path="/account" element={<Account />}/>
       </Routes>
     </BrowserRouter>

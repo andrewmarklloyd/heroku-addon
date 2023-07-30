@@ -1,7 +1,11 @@
 package postgres
 
-type Account struct {
-	UUID         string
-	AccessToken  string
-	RefreshToken string
+import "fmt"
+
+type AccountNotFound struct {
+	Email string
+}
+
+func (m *AccountNotFound) Error() string {
+	return fmt.Sprintf("account not found for email %s", m.Email)
 }

@@ -19,7 +19,13 @@ type Account struct {
 	UUID         string
 	Email        string
 	AccountType  AccountType
-	PlanType     PlanType
 	AccessToken  string
 	RefreshToken string
+}
+
+type Instance struct {
+	AccountID string `json:"accountID"`
+	Id        string `json:"id"`
+	Plan      string `json:"plan"`
+	Name      string `json:"name"`
 }

@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/dghubble/gologin v2.1.0+incompatible
 	github.com/dghubble/sessions v0.4.0
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.10.9
 	go.uber.org/zap v1.24.0

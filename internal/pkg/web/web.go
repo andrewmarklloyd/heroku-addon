@@ -3,8 +3,10 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/config"
@@ -16,6 +18,7 @@ import (
 	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/github"
 	"github.com/dghubble/sessions"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	githubOAuth2 "golang.org/x/oauth2/github"
 
@@ -83,11 +86,12 @@ func NewWebServer(logger *zap.SugaredLogger,
 
 	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/github/login", github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil)))
-	router.Handle("/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, w.loginGithub(), nil)))
+	router.Handle("/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, http.HandlerFunc(w.loginGithub), nil)))
 	router.Handle("/logout", w.requireLogin(w.logout()))
 
-	router.Handle("/api/user", w.requireLogin(w.getUser())).Methods(get)
-	router.Handle("/api/instances", w.requireLogin(w.getInstances())).Methods(get)
+	router.Handle("/api/user", w.requireLogin(http.HandlerFunc(w.getUser))).Methods(get)
+	router.Handle("/api/instances", w.requireLogin(http.HandlerFunc(w.getInstances))).Methods(get)
+	router.Handle("/api/new-instance", w.requireLogin(http.HandlerFunc(w.newInstance))).Methods(post)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",
@@ -117,7 +121,7 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	session := s.sessionStore.New("heroku-addon")
-	session.Set("user-id", ssoUser.Email)
+	session.Set("user-email", ssoUser.Email)
 	session.Set("provenance", "heroku")
 	if err := session.Save(w); err != nil {
 		w.WriteHeader(http.StatusForbidden)
@@ -147,31 +151,60 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 	`))
 }
 
-func (s WebServer) loginGithub() http.Handler {
-	fn := func(w http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		user, err := github.UserFromContext(ctx)
-		if err != nil {
-			s.logger.Errorf("getting user from context: %s", err)
-			http.Redirect(w, req, "/welcome", http.StatusFound)
-			return
-		}
-
-		session := s.sessionStore.New("heroku-addon")
-		session.Set("user-id", *user.Email)
-		session.Set("provenance", "github")
-		if err := session.Save(w); err != nil {
-			s.logger.Errorf("saving session: %s", err)
-			http.Redirect(w, req, "/welcome", http.StatusFound)
-			return
-		}
-
-		// create account
-
-		http.Redirect(w, req, "/", http.StatusFound)
-
+func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	user, err := github.UserFromContext(ctx)
+	if err != nil {
+		s.logger.Errorf("getting user from context: %s", err)
+		http.Redirect(w, req, "/welcome", http.StatusFound)
+		return
 	}
-	return http.HandlerFunc(fn)
+
+	if *user.Email != os.Getenv("AUTHORIZED_USER") {
+		s.logger.Errorf("non authorized user attempted login: %s", *user.Email)
+		http.Redirect(w, req, "/welcome", http.StatusFound)
+		return
+	}
+
+	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, *user.Email)
+	if err != nil {
+		var noAcctErr *postgres.AccountNotFound
+		if errors.As(err, &noAcctErr) {
+			id := uuid.New().String()
+			a = account.Account{
+				UUID:         id,
+				Email:        *user.Email,
+				AccountType:  account.AccountTypeGithub,
+				AccessToken:  "",
+				RefreshToken: "",
+			}
+
+			err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, a)
+			if err != nil {
+				s.logger.Errorf("creating new account: %s", err)
+				http.Redirect(w, req, "/welcome", http.StatusFound)
+				return
+			}
+		} else {
+			s.logger.Errorf("getting account from email: %s", err)
+			http.Redirect(w, req, "/welcome", http.StatusFound)
+			return
+		}
+	}
+
+	session := s.sessionStore.New("heroku-addon")
+	session.Set("user-email", *user.Email)
+	session.Set("user-id", a.UUID)
+	session.Set("provenance", "github")
+	if err := session.Save(w); err != nil {
+		s.logger.Errorf("saving session: %s", err)
+		http.Redirect(w, req, "/welcome", http.StatusFound)
+		return
+	}
+
+	// create account
+
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func (s WebServer) logout() http.Handler {
@@ -203,9 +236,9 @@ func (s WebServer) requireLogin(next http.Handler) http.Handler {
 		req := r.WithContext(context.WithValue(ctx, ContextProvenanceKey, provenance))
 		*r = *req
 
-		_, present := session.GetOk("user-id")
+		_, present := session.GetOk("user-email")
 		if !present {
-			s.logger.Errorf("could not get user-id: %s", err)
+			s.logger.Errorf("could not get user-email: %s", err)
 			http.Redirect(w, req, "/welcome", http.StatusFound)
 			return
 		}
@@ -258,7 +291,6 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 		UUID:         payload.UUID,
 		Email:        ownerEmail,
 		AccountType:  account.AccountTypeHeroku,
-		PlanType:     account.PlanTypeFree, // TODO: use payload.Plan
 		AccessToken:  oauthResp.AccessToken,
 		RefreshToken: oauthResp.RefreshToken,
 	}

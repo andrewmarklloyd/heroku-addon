@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 
-const Home = () => {
+const Account = () => {
   return (
     <>
     <h1>Account</h1>
@@ -9,4 +9,4 @@ const Home = () => {
   );
 }
 
-export default Home;
+export default Account;

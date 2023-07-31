@@ -58,12 +58,14 @@ const CreateInstance = () => {
 
 const ConfirmInstance = (props) => {
   const [open, setOpen] = useState(false);
+  const [createDisabled, setCreateDisabled] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const pricing = GetPricing()
   
   const handleCreateInstance = () => {
+    setCreateDisabled(true)
     fetch("/api/new-instance", {
       method: 'POST',
       credentials: 'same-origin',
@@ -96,11 +98,11 @@ const ConfirmInstance = (props) => {
     <h3>Name: {location.state.name}</h3>
     <h3>Plan: {location.state.plan}</h3>
     <h3>Total: ${pricing[location.state.plan]}/month</h3>
-    <Button onClick={handleCreateInstance} size="small" variant="outlined">Create Instance</Button>
+    <Button disabled={createDisabled} onClick={handleCreateInstance} size="small" variant="outlined">Create Instance</Button>
     <Button onClick={handleCancel} color="secondary" size="small" variant="outlined">Cancel</Button>
-    <Snackbar open={open} autoHideDuration={2000}>
+    <Snackbar open={open} autoHideDuration={3000}>
       <Alert severity="success" sx={{ width: '100%' }}>
-        This is a success message!
+        Successfully created instance, redirecting home in 3 seconds.
       </Alert>
     </Snackbar>
     <Outlet />

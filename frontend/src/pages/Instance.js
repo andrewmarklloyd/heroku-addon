@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
@@ -115,7 +115,7 @@ const EditInstance = (props) => {
   const pricing = GetPricing()
   const location = useLocation();
   var [instanceName, setInstanceName] = useState('');
-  const [deleteDisabled, setDeleteDisabled] = useState(false);
+  const [deleteDisabled, setDeleteDisabled] = useState(true);
 
   const handleInstanceName = (event) => {
     setInstanceName(event.target.value)
@@ -151,6 +151,14 @@ const EditInstance = (props) => {
   const handleBack = () => {
     navigate("/")
   }
+
+  useEffect(() => {
+    if (instanceName === location.state.name) {
+      setDeleteDisabled(false)
+    } else {
+      setDeleteDisabled(true)
+    }
+  }, [instanceName])
 
   return (
     <>

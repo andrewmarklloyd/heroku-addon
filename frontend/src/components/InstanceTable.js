@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -8,6 +9,11 @@ import Paper from '@mui/material/Paper';
 import { Button } from '@mui/material';
 
 const InstanceTable = (props) => {
+    const navigate = useNavigate();
+    const handleEditInstance = (row) => {
+        navigate("/instance/edit", {state:row})
+    }
+
     return (
         <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -29,7 +35,7 @@ const InstanceTable = (props) => {
                 </TableCell>
                 <TableCell align="left">{row.plan.toUpperCase()}</TableCell>
                 <TableCell align="right">
-                    <Button href={"/instance/"+row.id+"/edit"}>Edit</Button>
+                    <Button onClick={handleEditInstance.bind(this,row)} size="small" variant="outlined">Edit</Button>
                 </TableCell>
                 </TableRow>
             ))}

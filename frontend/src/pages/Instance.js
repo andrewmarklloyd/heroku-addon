@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import {GetPricing} from '../helpers/Pricing'
+import { GetPricing } from '../helpers/Pricing'
 
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -110,7 +110,49 @@ const ConfirmInstance = (props) => {
   );
 }
 
+const EditInstance = (props) => {
+  const navigate = useNavigate();
+  const pricing = GetPricing()
+  const location = useLocation();
+  var [instanceName, setInstanceName] = useState('');
+
+  const handleInstanceName = (event) => {
+    setInstanceName(event.target.value)
+  }
+
+  const handleDeleteInstance = (event) => {
+    if (instanceName !== location.state.name) {
+      alert("Entered text did not equal " + location.state.name)
+      return
+    }
+    console.log("deleting", instanceName)
+    navigate("/")
+  }
+
+  const handleBack = () => {
+    navigate("/")
+  }
+
+  return (
+    <>
+    <h1>Edit Instance</h1>
+    <h3>Name: {location.state.name}</h3>
+    <h3>Plan: {location.state.plan}</h3>
+    <h3>Total: ${pricing[location.state.plan]}/month</h3>
+    <br></br>
+    <br></br>
+    <h1>Delete Instance</h1>
+    <div>Are you sure you want to delete {location.state.name}? Type <i>{location.state.name}</i> to confirm deletion.</div>
+    <TextField onChange={handleInstanceName} id="outlined-basic" label="Name" variant="outlined" />
+    <Button onClick={handleDeleteInstance} size="small" variant="outlined">Delete</Button>
+    <Button onClick={handleBack} color="secondary" size="small" variant="outlined">Back</Button>
+    <Outlet />
+  </>
+  );
+}
+
 export {
   CreateInstance,
-  ConfirmInstance
+  ConfirmInstance,
+  EditInstance
 };

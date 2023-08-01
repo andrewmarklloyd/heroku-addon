@@ -115,18 +115,37 @@ const EditInstance = (props) => {
   const pricing = GetPricing()
   const location = useLocation();
   var [instanceName, setInstanceName] = useState('');
+  const [deleteDisabled, setDeleteDisabled] = useState(false);
 
   const handleInstanceName = (event) => {
     setInstanceName(event.target.value)
   }
 
-  const handleDeleteInstance = (event) => {
+  const handleDeleteInstance = () => {
     if (instanceName !== location.state.name) {
       alert("Entered text did not equal " + location.state.name)
       return
     }
-    console.log("deleting", instanceName)
-    navigate("/")
+
+    setDeleteDisabled(true)
+    fetch("/api/delete-instance", {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify({"id": location.state.id})
+    })
+    .then(r => r.json())
+    .then(r => {
+      if (r.status === 'success') {
+        navigate("/")
+      } else {
+        alert("failed to delete instance: " + r)
+        setDeleteDisabled(false)
+      }
+    })
   }
 
   const handleBack = () => {
@@ -144,7 +163,7 @@ const EditInstance = (props) => {
     <h1>Delete Instance</h1>
     <div>Are you sure you want to delete {location.state.name}? Type <i>{location.state.name}</i> to confirm deletion.</div>
     <TextField onChange={handleInstanceName} id="outlined-basic" label="Name" variant="outlined" />
-    <Button onClick={handleDeleteInstance} size="small" variant="outlined">Delete</Button>
+    <Button disabled={deleteDisabled} onClick={handleDeleteInstance} size="small" variant="outlined">Delete</Button>
     <Button onClick={handleBack} color="secondary" size="small" variant="outlined">Back</Button>
     <Outlet />
   </>

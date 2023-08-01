@@ -85,6 +85,16 @@ func (c *Client) DeleteAccout(uuid string) error {
 	return nil
 }
 
+func (c *Client) DeleteInstance(accountid, uuid string) error {
+	stmt := "DELETE FROM instance WHERE accountid = $1 AND id = $2;"
+	_, err := c.sqlDB.Exec(stmt, accountid, uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Client) GetAccountFromEmail(cryptoUtil crypto.Util, email string) (account.Account, error) {
 	var accounts []account.Account
 	var acct account.Account

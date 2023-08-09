@@ -121,8 +121,16 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, ssoUser.Email, string(account.AccountTypeHeroku))
+	if err != nil {
+		s.logger.Errorf("getting heroku account from email: %s", err)
+		http.Redirect(w, req, "/welcome", http.StatusFound)
+		return
+	}
+
 	session := s.sessionStore.New("heroku-addon")
 	session.Set("user-email", ssoUser.Email)
+	session.Set("user-id", a.UUID)
 	session.Set("provenance", "heroku")
 	if err := session.Save(w); err != nil {
 		w.WriteHeader(http.StatusForbidden)
@@ -167,7 +175,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, *user.Email)
+	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, *user.Email, string(account.AccountTypeGithub))
 	if err != nil {
 		var noAcctErr *postgres.AccountNotFound
 		if errors.As(err, &noAcctErr) {
@@ -202,8 +210,6 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/welcome", http.StatusFound)
 		return
 	}
-
-	// create account
 
 	http.Redirect(w, req, "/", http.StatusFound)
 }

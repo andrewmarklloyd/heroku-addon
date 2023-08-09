@@ -95,11 +95,11 @@ func (c *Client) DeleteInstance(accountid, uuid string) error {
 	return nil
 }
 
-func (c *Client) GetAccountFromEmail(cryptoUtil crypto.Util, email string) (account.Account, error) {
+func (c *Client) GetAccountFromEmail(cryptoUtil crypto.Util, email, accountType string) (account.Account, error) {
 	var accounts []account.Account
 	var acct account.Account
-	stmt := `SELECT * FROM account WHERE email = $1 LIMIT 1`
-	rows, err := c.sqlDB.Query(stmt, email)
+	stmt := `SELECT * FROM account WHERE email = $1 AND accounttype = $2 LIMIT 1`
+	rows, err := c.sqlDB.Query(stmt, email, accountType)
 	if err != nil {
 		return acct, fmt.Errorf("executing select query: %s", err)
 	}

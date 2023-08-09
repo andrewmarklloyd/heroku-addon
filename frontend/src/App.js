@@ -42,7 +42,7 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home user={user}/>}/>
-        <Route path="/account" element={<Account />}/>
+        <Route path="/account" element={<Account user={user} />}/>
         <Route path="/instance/create" element={<CreateInstance />}/>
         <Route path="/instance/confirm" element={<ConfirmInstance />}/>
         <Route path="/instance/edit" element={<EditInstance />}/>

@@ -341,7 +341,7 @@ func (s WebServer) deprovisionHandler(w http.ResponseWriter, req *http.Request) 
 
 	vars := gmux.Vars(req)
 
-	s.logger.Infof("resource_uuid: %s", vars["resource_uuid"])
+	s.logger.Infof("deleting addon resource_uuid: %s", vars["resource_uuid"])
 
 	w.WriteHeader(http.StatusNoContent)
 	// TODO: add correct id

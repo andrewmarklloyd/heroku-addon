@@ -10,6 +10,7 @@ const (
 type PlanType string
 
 const (
+	PlanTypeTest       PlanType = "test"
 	PlanTypeFree       PlanType = "free"
 	PlanTypeStaging    PlanType = "staging"
 	PlanTypeProduction PlanType = "production"

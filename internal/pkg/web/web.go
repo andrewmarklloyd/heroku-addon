@@ -288,17 +288,32 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	account := account.Account{
+	acct := account.Account{
 		UUID:         payload.UUID,
 		Email:        ownerEmail,
 		AccountType:  account.AccountTypeHeroku,
 		AccessToken:  oauthResp.AccessToken,
 		RefreshToken: oauthResp.RefreshToken,
 	}
-	err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, account)
+	err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, acct)
 	if err != nil {
 		s.logger.Errorf("error creating account: %s", err)
 		http.Error(w, `{"error":"error provisioning","status":"failed"}`, http.StatusInternalServerError)
+		return
+	}
+
+	idAndName := uuid.New().String()
+	a := account.Instance{
+		AccountID: payload.UUID,
+		Id:        idAndName,
+		Plan:      payload.Plan,
+		Name:      idAndName,
+	}
+
+	err = s.postgresClient.CreateOrUpdateInstance(a)
+	if err != nil {
+		s.logger.Errorf("error creating instance: %s", err)
+		http.Error(w, `{"error":"saving instance to database","status":"failed"}`, http.StatusInternalServerError)
 		return
 	}
 

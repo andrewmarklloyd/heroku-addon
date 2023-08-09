@@ -12,6 +12,14 @@ const Home = (props) => {
     navigate("/instance/create")
   }
 
+  const createInstanceButton = () => {
+    if (props.user.provenance !== "" && props.user.provenance !== "heroku") {
+      return <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Instance</Button>
+    } else {
+      return <></>
+    }
+  }
+
   useEffect(() => {
     fetch("/api/instances", {
         method: 'GET',
@@ -31,7 +39,7 @@ const Home = (props) => {
     <>
     <br></br>
     <br></br>
-    <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Instance</Button>
+    {createInstanceButton()}
     <br></br>
     <h1>Instances</h1>
     <InstanceTable instances={instances}></InstanceTable>

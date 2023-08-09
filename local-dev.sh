@@ -3,6 +3,7 @@
 set -e
 
 export PORT=8080
+export CI=true
 
 if [[ ${1} != 'skip-front' ]]; then
     cd frontend

@@ -158,7 +158,7 @@ const EditInstance = (props) => {
     } else {
       setDeleteDisabled(true)
     }
-  }, [instanceName])
+  }, [instanceName, location.state.name])
 
   return (
     <>

@@ -19,6 +19,7 @@ const (
 type Account struct {
 	UUID         string
 	Email        string
+	Name         string
 	AccountType  AccountType
 	AccessToken  string
 	RefreshToken string

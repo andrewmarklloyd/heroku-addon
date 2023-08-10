@@ -13,6 +13,7 @@ const (
 	createTableAccountStmt = `CREATE TABLE IF NOT EXISTS account(
 		uuid text PRIMARY KEY,
 		email text,
+		name text,
 		accounttype text,
 		accesstoken bytea,
 		refreshtoken bytea
@@ -46,6 +47,11 @@ func NewPostgresClient(databaseURL string) (Client, error) {
 		return postgresClient, fmt.Errorf("executing create table account statement: %w", err)
 	}
 
+	_, err = db.Exec("ALTER TABLE account ADD COLUMN IF NOT EXISTS name text;")
+	if err != nil {
+		return postgresClient, fmt.Errorf("executing alter table account statement: %w", err)
+	}
+
 	_, err = db.Exec(createTableInstancesStmt)
 	if err != nil {
 		return postgresClient, fmt.Errorf("executing create table instances statement: %w", err)
@@ -66,8 +72,8 @@ func (c *Client) CreateOrUpdateAccount(cryptoUtil crypto.Util, account account.A
 	}
 
 	// TODO: ensure excluded.* is encrypted
-	stmt := "INSERT INTO account(uuid, email, accounttype, accesstoken, refreshtoken) VALUES($1, $2, $3, $4, $5) ON CONFLICT (uuid) DO UPDATE SET email = excluded.email, accounttype = excluded.accounttype, accesstoken = excluded.accesstoken, refreshtoken = excluded.refreshtoken;"
-	_, err = c.sqlDB.Exec(stmt, account.UUID, account.Email, account.AccountType, string(accessEnc), string(refreshEnc))
+	stmt := "INSERT INTO account(uuid, email, name, accounttype, accesstoken, refreshtoken) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (uuid) DO UPDATE SET email = excluded.email, name = excluded.name, accounttype = excluded.accounttype, accesstoken = excluded.accesstoken, refreshtoken = excluded.refreshtoken;"
+	_, err = c.sqlDB.Exec(stmt, account.UUID, account.Email, account.Name, account.AccountType, string(accessEnc), string(refreshEnc))
 	if err != nil {
 		return err
 	}

@@ -183,6 +183,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 			a = account.Account{
 				UUID:         id,
 				Email:        *user.Email,
+				Name:         *user.Name,
 				AccountType:  account.AccountTypeGithub,
 				AccessToken:  "",
 				RefreshToken: "",
@@ -280,14 +281,14 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	id, err := s.herokuClient.GetAppId(oauthResp.AccessToken)
+	addonInfo, err := s.herokuClient.GetAppAddonInfo(oauthResp.AccessToken)
 	if err != nil {
 		s.logger.Errorf("error getting app id: %s", err)
 		http.Error(w, `{"error":"error provisioning","status":"failed"}`, http.StatusInternalServerError)
 		return
 	}
 
-	ownerEmail, err := heroku.GetOwnerEmail(oauthResp.AccessToken, id)
+	ownerEmail, err := heroku.GetOwnerEmail(oauthResp.AccessToken, addonInfo.App.Id)
 	if err != nil {
 		s.logger.Errorf("error getting owner email: %s", err)
 		http.Error(w, `{"error":"error provisioning","status":"failed"}`, http.StatusInternalServerError)
@@ -297,6 +298,7 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 	acct := account.Account{
 		UUID:         payload.UUID,
 		Email:        ownerEmail,
+		Name:         addonInfo.App.Name,
 		AccountType:  account.AccountTypeHeroku,
 		AccessToken:  oauthResp.AccessToken,
 		RefreshToken: oauthResp.RefreshToken,

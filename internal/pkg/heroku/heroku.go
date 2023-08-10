@@ -138,38 +138,11 @@ func (c *HerokuClient) RefreshToken(refreshToken string) (OauthResponse, error) 
 	return oauthResponse, nil
 }
 
-func GetAddonInfo(token, resourceUUID string) error {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://api.heroku.com/addons/%s", resourceUUID), nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/vnd.heroku+json; version=3")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("performing request to heroku: %s", err)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("reading response body from heroku: %s", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("response from heroku, receieved status code: %d, response: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
-func (c *HerokuClient) GetAppId(token string) (string, error) {
+func (c *HerokuClient) GetAppAddonInfo(token string) (AddonInfo, error) {
 	url := fmt.Sprintf("https://api.heroku.com/addons/%s", c.addonUsername)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return "", err
+		return AddonInfo{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/vnd.heroku+json; version=3")
@@ -178,20 +151,20 @@ func (c *HerokuClient) GetAppId(token string) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("performing request to heroku: %s", err)
+		return AddonInfo{}, fmt.Errorf("performing request to heroku: %s", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("response from heroku, receieved status code: %d", resp.StatusCode)
+		return AddonInfo{}, fmt.Errorf("response from heroku, receieved status code: %d", resp.StatusCode)
 	}
 
 	var addonInfo AddonInfo
 	err = json.NewDecoder(resp.Body).Decode(&addonInfo)
 	if err != nil {
-		return "", fmt.Errorf("decoding token response: %w", err)
+		return AddonInfo{}, fmt.Errorf("decoding token response: %w", err)
 	}
 
-	return addonInfo.App.Id, nil
+	return addonInfo, nil
 }
 
 func GetOwnerEmail(token, appId string) (string, error) {

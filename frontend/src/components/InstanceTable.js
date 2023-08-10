@@ -35,7 +35,11 @@ const InstanceTable = (props) => {
                 </TableCell>
                 <TableCell align="left">{row.plan.toUpperCase()}</TableCell>
                 <TableCell align="right">
-                    <Button onClick={handleEditInstance.bind(this,row)} size="small" variant="outlined">Edit</Button>
+                    {(props.user.provenance !== "" && props.user.provenance !== "heroku") ? (
+                      <Button onClick={handleEditInstance.bind(this,row)} size="small" variant="outlined">Edit</Button>
+                  ) : (
+                    <Button disabled="true" size="small" variant="outlined">Edit</Button>
+                  )}
                 </TableCell>
                 </TableRow>
             ))}

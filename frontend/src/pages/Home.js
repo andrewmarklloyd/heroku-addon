@@ -42,7 +42,7 @@ const Home = (props) => {
     {createInstanceButton()}
     <br></br>
     <h1>Instances</h1>
-    <InstanceTable instances={instances}></InstanceTable>
+    <InstanceTable user={props.user} instances={instances}></InstanceTable>
     <Outlet />
   </>
   );

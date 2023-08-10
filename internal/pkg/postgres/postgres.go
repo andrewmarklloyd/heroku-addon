@@ -47,11 +47,6 @@ func NewPostgresClient(databaseURL string) (Client, error) {
 		return postgresClient, fmt.Errorf("executing create table account statement: %w", err)
 	}
 
-	_, err = db.Exec("ALTER TABLE account ADD COLUMN IF NOT EXISTS name text;")
-	if err != nil {
-		return postgresClient, fmt.Errorf("executing alter table account statement: %w", err)
-	}
-
 	_, err = db.Exec(createTableInstancesStmt)
 	if err != nil {
 		return postgresClient, fmt.Errorf("executing create table instances statement: %w", err)

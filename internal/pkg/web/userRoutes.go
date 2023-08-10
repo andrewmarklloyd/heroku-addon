@@ -153,6 +153,11 @@ func (s WebServer) getUserInfo(req *http.Request) (UserInfo, error) {
 		return UserInfo{}, fmt.Errorf("user-email from session was not found")
 	}
 
+	name, ok := session.GetOk("user-name")
+	if !ok {
+		return UserInfo{}, fmt.Errorf("user-name from session was not found")
+	}
+
 	provenance, ok := session.GetOk("provenance")
 	if !ok {
 		return UserInfo{}, fmt.Errorf("provenance from session was not found")
@@ -161,6 +166,7 @@ func (s WebServer) getUserInfo(req *http.Request) (UserInfo, error) {
 	return UserInfo{
 		UserID:     userID,
 		Email:      email,
+		Name:       name,
 		Provenance: provenance,
 	}, nil
 }

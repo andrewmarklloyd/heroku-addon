@@ -14,6 +14,10 @@ const InstanceTable = (props) => {
         navigate("/instance/edit", {state:row})
     }
 
+    const handleHerokuEdit = () => {
+        window.location.href = `https://dashboard.heroku.com/apps/${props.user.name}/resources`
+    }
+
     return (
         <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -35,11 +39,11 @@ const InstanceTable = (props) => {
                 </TableCell>
                 <TableCell align="left">{row.plan.toUpperCase()}</TableCell>
                 <TableCell align="right">
-                    {(props.user.provenance !== "" && props.user.provenance !== "heroku") ? (
-                      <Button onClick={handleEditInstance.bind(this,row)} size="small" variant="outlined">Edit</Button>
-                  ) : (
-                    <Button disabled="true" size="small" variant="outlined">Edit</Button>
-                  )}
+                    {(props.user.provenance === "heroku") ? (
+                        <Button onClick={handleHerokuEdit} size="small" variant="outlined">Edit</Button>
+                    ) : (
+                        <Button onClick={handleEditInstance.bind(this,row)} size="small" variant="outlined">Edit</Button>
+                    )}
                 </TableCell>
                 </TableRow>
             ))}

@@ -151,10 +151,13 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 	  </head>
 	  <body>
 		<div id="root">
-		  <h1>Welcome, to use this site please login</h1>
+		  <h1>Welcome</h1>
 		</div>
 		<button onclick="window.location.href='/github/login';">
-		  Click Here
+		  Login with Github
+		</button>
+		<button onclick="window.location.href='https://elements.heroku.com/addons/alloyd-poc';">
+		  Provision Addon in Heroku
 		</button>
 	  </body>
 	</html>

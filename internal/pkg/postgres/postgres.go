@@ -113,7 +113,7 @@ func (c *Client) GetAccountFromEmail(cryptoUtil crypto.Util, email, accountType 
 
 	for rows.Next() {
 		var a account.Account
-		err := rows.Scan(&a.UUID, &a.Email, &a.AccountType, &a.AccessToken, &a.RefreshToken)
+		err := rows.Scan(&a.UUID, &a.Email, &a.Name, &a.AccountType, &a.AccessToken, &a.RefreshToken)
 		if err != nil {
 			return acct, err
 		}

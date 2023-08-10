@@ -13,10 +13,10 @@ const Home = (props) => {
   }
 
   const createInstanceButton = () => {
-    if (props.user.provenance !== "" && props.user.provenance !== "heroku") {
-      return <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Instance</Button>
-    } else {
+    if (props.user.provenance === "" || props.user.provenance === "heroku") {
       return <></>
+    } else {
+      return <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Instance</Button>
     }
   }
 

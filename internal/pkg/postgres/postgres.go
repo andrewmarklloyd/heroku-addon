@@ -152,7 +152,7 @@ func (c *Client) CreateOrUpdateInstance(instance account.Instance) error {
 }
 
 func (c *Client) GetInstances(accountID string) ([]account.Instance, error) {
-	var instances []account.Instance
+	instances := []account.Instance{}
 	stmt := `SELECT * FROM instance WHERE accountid = $1;`
 	rows, err := c.sqlDB.Query(stmt, accountID)
 	if err != nil {

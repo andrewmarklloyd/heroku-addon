@@ -30,6 +30,7 @@ const App = () => {
         setUser(state => ({ ...state, 
           provenance: r.provenance,
           email: r.email,
+          name: r.name,
           userID: r.userID
         }));
       })

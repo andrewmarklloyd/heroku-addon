@@ -10,36 +10,43 @@ import (
 )
 
 func (s WebServer) getUser(w http.ResponseWriter, req *http.Request) {
-	userID, email, provenance, err := s.getUserInfo(req)
+	userInfo, err := s.getUserInfo(req)
 	if err != nil {
 		s.logger.Errorf("getting user info: %s", err)
 		http.Error(w, "could not get user", http.StatusBadRequest)
 		return
 	}
 
-	fmt.Fprintf(w, `{"provenance":"%s","email":"%s","userID":"%s"}`, provenance, email, userID)
+	uJson, err := json.Marshal(userInfo)
+	if err != nil {
+		s.logger.Errorf("marshalling user info to json: %s", err)
+		http.Error(w, "could not get user", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, string(uJson))
 }
 
 func (s WebServer) getInstances(w http.ResponseWriter, req *http.Request) {
 
-	userID, _, _, err := s.getUserInfo(req)
+	userInfo, err := s.getUserInfo(req)
 	if err != nil {
 		s.logger.Errorf("getting user info: %s", err)
 		http.Error(w, "could not get user", http.StatusBadRequest)
 		return
 	}
 
-	instances, err := s.postgresClient.GetInstances(userID)
+	instances, err := s.postgresClient.GetInstances(userInfo.UserID)
 	if err != nil {
 		s.logger.Errorf("getting instances from postgres: %s", err)
-		http.Error(w, "could not instances", http.StatusInternalServerError)
+		http.Error(w, "could not get instances", http.StatusInternalServerError)
 		return
 	}
 
 	iJson, err := json.Marshal(instances)
 	if err != nil {
 		s.logger.Errorf("marshalling instances to json: %s", err)
-		http.Error(w, "could not instances", http.StatusInternalServerError)
+		http.Error(w, "could not get instances", http.StatusInternalServerError)
 		return
 	}
 
@@ -47,14 +54,14 @@ func (s WebServer) getInstances(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) newInstance(w http.ResponseWriter, req *http.Request) {
-	userID, _, provenance, err := s.getUserInfo(req)
+	userInfo, err := s.getUserInfo(req)
 	if err != nil {
 		s.logger.Errorf("getting user info: %s", err)
 		http.Error(w, "could not get user", http.StatusBadRequest)
 		return
 	}
 
-	if provenance == "heroku" {
+	if userInfo.Provenance == "heroku" {
 		s.logger.Errorf("heroku user cannot create instances")
 		http.Error(w, `{"error":"heroku user cannot create instances"}`, http.StatusBadRequest)
 		return
@@ -76,14 +83,14 @@ func (s WebServer) newInstance(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	a := account.Instance{
-		AccountID: userID,
+	i := account.Instance{
+		AccountID: userInfo.UserID,
 		Id:        uuid.New().String(),
 		Plan:      ir.Plan,
 		Name:      ir.Name,
 	}
 
-	err = s.postgresClient.CreateOrUpdateInstance(a)
+	err = s.postgresClient.CreateOrUpdateInstance(i)
 	if err != nil {
 		s.logger.Errorf("creating instance: %s", err)
 		http.Error(w, `{"error":"saving instance to database"}`, http.StatusBadRequest)
@@ -93,14 +100,14 @@ func (s WebServer) newInstance(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) deleteInstance(w http.ResponseWriter, req *http.Request) {
-	userID, _, provenance, err := s.getUserInfo(req)
+	userInfo, err := s.getUserInfo(req)
 	if err != nil {
 		s.logger.Errorf("getting user info: %s", err)
 		http.Error(w, "could not get user", http.StatusBadRequest)
 		return
 	}
 
-	if provenance == "heroku" {
+	if userInfo.Provenance == "heroku" {
 		s.logger.Errorf("heroku user cannot delete instances")
 		http.Error(w, `{"error":"heroku user cannot delete instances"}`, http.StatusBadRequest)
 		return
@@ -121,7 +128,7 @@ func (s WebServer) deleteInstance(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = s.postgresClient.DeleteInstance(userID, ir.Id)
+	err = s.postgresClient.DeleteInstance(userInfo.UserID, ir.Id)
 	if err != nil {
 		s.logger.Errorf("deleting instance: %s", err)
 		http.Error(w, `{"error":"deleting instance"}`, http.StatusBadRequest)
@@ -130,26 +137,30 @@ func (s WebServer) deleteInstance(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(w, `{"status":"success"}`)
 }
 
-func (s WebServer) getUserInfo(req *http.Request) (string, string, string, error) {
+func (s WebServer) getUserInfo(req *http.Request) (UserInfo, error) {
 	session, err := s.sessionStore.Get(req, "heroku-addon")
 	if err != nil {
-		return "", "", "", fmt.Errorf("could not get session: %w", err)
+		return UserInfo{}, fmt.Errorf("could not get session: %w", err)
 	}
 
 	userID, ok := session.GetOk("user-id")
 	if !ok {
-		return "", "", "", fmt.Errorf("user-id from session was not found")
+		return UserInfo{}, fmt.Errorf("user-id from session was not found")
 	}
 
 	email, ok := session.GetOk("user-email")
 	if !ok {
-		return "", "", "", fmt.Errorf("user-email from session was not found")
+		return UserInfo{}, fmt.Errorf("user-email from session was not found")
 	}
 
 	provenance, ok := session.GetOk("provenance")
 	if !ok {
-		return "", "", "", fmt.Errorf("provenance from session was not found")
+		return UserInfo{}, fmt.Errorf("provenance from session was not found")
 	}
 
-	return userID, email, provenance, nil
+	return UserInfo{
+		UserID:     userID,
+		Email:      email,
+		Provenance: provenance,
+	}, nil
 }

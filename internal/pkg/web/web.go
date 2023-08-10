@@ -131,6 +131,7 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 	session := s.sessionStore.New("heroku-addon")
 	session.Set("user-email", ssoUser.Email)
 	session.Set("user-id", a.UUID)
+	session.Set("user-name", a.Name)
 	session.Set("provenance", "heroku")
 	if err := session.Save(w); err != nil {
 		w.WriteHeader(http.StatusForbidden)
@@ -205,6 +206,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	session := s.sessionStore.New("heroku-addon")
 	session.Set("user-email", *user.Email)
 	session.Set("user-id", a.UUID)
+	session.Set("user-name", a.Name)
 	session.Set("provenance", "github")
 	if err := session.Save(w); err != nil {
 		s.logger.Errorf("saving session: %s", err)
@@ -344,6 +346,9 @@ func (s WebServer) deprovisionHandler(w http.ResponseWriter, req *http.Request) 
 	vars := gmux.Vars(req)
 
 	s.logger.Infof("deleting addon resource_uuid: %s", vars["resource_uuid"])
+
+	// delete instance
+	// keep account in case return customer?
 
 	w.WriteHeader(http.StatusNoContent)
 	// TODO: add correct id

@@ -43,11 +43,8 @@ const ResponsiveAppBar = (props) => {
 
   var settings = {
     'Profile': handleCloseUserMenu,
-    'Account': handleAccount
-  }
-
-  if (props.user.provenance !== "" && props.user.provenance !== "heroku") {
-    settings['Logout'] = handleLogout
+    'Account': handleAccount,
+    'Logout': handleLogout
   }
 
   return (

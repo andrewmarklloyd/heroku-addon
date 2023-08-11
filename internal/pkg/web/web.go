@@ -70,7 +70,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router := gmux.NewRouter().StrictSlash(true)
 
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
-	router.Handle("/welcome", http.HandlerFunc(w.tmpHandler)).Methods(get)
+	router.Handle("/login", http.HandlerFunc(w.tmpHandler)).Methods(get)
 
 	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
 	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
@@ -124,7 +124,7 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, ssoUser.Email, string(account.AccountTypeHeroku))
 	if err != nil {
 		s.logger.Errorf("getting heroku account from email: %s", err)
-		http.Redirect(w, req, "/welcome", http.StatusFound)
+		http.Redirect(w, req, "/login", http.StatusFound)
 		return
 	}
 
@@ -147,18 +147,35 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(`<!DOCTYPE html>
 	<html lang="en">
 	  <head>
-		<title>React App</title>
+		<title>Nothing</title>
 	  </head>
+	  <style>
+	  .button {
+		background-color: #555555; /* Black */
+		border: none;
+		color: white;
+		padding: 15px 32px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+	  }
+	  </style>
 	  <body>
 		<div id="root">
-		  <h1>Welcome</h1>
+		  <h1>Login</h1>
 		</div>
-		<button onclick="window.location.href='/github/login';">
-		  Login with Github
-		</button>
-		<button onclick="window.location.href='https://elements.heroku.com/addons/alloyd-poc';">
-		  Provision Addon in Heroku
-		</button>
+		<div>
+			<button class="button" onclick="window.location.href='/github/login';">
+			Login with Github
+			</button>
+		</div>
+		<br></br>
+		<div>
+			<button class="button" onclick="window.location.href='https://elements.heroku.com/addons/alloyd-poc';">
+			Provision Addon in Heroku
+			</button>
+		</div>
 	  </body>
 	</html>
 	`))
@@ -169,13 +186,13 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	user, err := github.UserFromContext(ctx)
 	if err != nil {
 		s.logger.Errorf("getting user from context: %s", err)
-		http.Redirect(w, req, "/welcome", http.StatusFound)
+		http.Redirect(w, req, "/login", http.StatusFound)
 		return
 	}
 
 	if *user.Email != os.Getenv("AUTHORIZED_USER") {
 		s.logger.Errorf("non authorized user attempted login: %s", *user.Email)
-		http.Redirect(w, req, "/welcome", http.StatusFound)
+		http.Redirect(w, req, "/login", http.StatusFound)
 		return
 	}
 
@@ -196,12 +213,12 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 			err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, a)
 			if err != nil {
 				s.logger.Errorf("creating new account: %s", err)
-				http.Redirect(w, req, "/welcome", http.StatusFound)
+				http.Redirect(w, req, "/login", http.StatusFound)
 				return
 			}
 		} else {
 			s.logger.Errorf("getting account from email: %s", err)
-			http.Redirect(w, req, "/welcome", http.StatusFound)
+			http.Redirect(w, req, "/login", http.StatusFound)
 			return
 		}
 	}
@@ -213,7 +230,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	session.Set("provenance", "github")
 	if err := session.Save(w); err != nil {
 		s.logger.Errorf("saving session: %s", err)
-		http.Redirect(w, req, "/welcome", http.StatusFound)
+		http.Redirect(w, req, "/login", http.StatusFound)
 		return
 	}
 
@@ -223,7 +240,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 func (s WebServer) logout() http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		s.sessionStore.Destroy(w, "heroku-addon")
-		http.Redirect(w, req, "/welcome", http.StatusFound)
+		http.Redirect(w, req, "/login", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
 }
@@ -234,14 +251,14 @@ func (s WebServer) requireLogin(next http.Handler) http.Handler {
 
 		if err != nil {
 			// s.logger.Errorf("could not get session: %s", err)
-			http.Redirect(w, r, "/welcome", http.StatusFound)
+			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
 		provenance, ok := session.GetOk("provenance")
 		if !ok {
 			s.logger.Errorf("could not get provenance from context")
-			http.Redirect(w, r, "/welcome", http.StatusFound)
+			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
@@ -252,7 +269,7 @@ func (s WebServer) requireLogin(next http.Handler) http.Handler {
 		_, present := session.GetOk("user-email")
 		if !present {
 			s.logger.Errorf("could not get user-email: %s", err)
-			http.Redirect(w, req, "/welcome", http.StatusFound)
+			http.Redirect(w, req, "/login", http.StatusFound)
 			return
 		}
 

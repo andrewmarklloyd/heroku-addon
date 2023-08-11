@@ -67,7 +67,7 @@ const ResponsiveAppBar = (props) => {
               textDecoration: 'none',
             }}
           >
-            LOGO
+            Nothing
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
@@ -118,7 +118,7 @@ const ResponsiveAppBar = (props) => {
               textDecoration: 'none',
             }}
           >
-            LOGO
+            Nothing
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
           </Box>

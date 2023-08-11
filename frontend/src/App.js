@@ -5,6 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Home from "./pages/Home";
 import Account from "./pages/Account";
+import About from "./pages/About";
 import { CreateInstance, ConfirmInstance, EditInstance } from './pages/Instance';
 
 const darkTheme = createTheme({
@@ -43,6 +44,7 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home user={user}/>}/>
+        <Route path="/about" element={<About/>}/>
         <Route path="/account" element={<Account user={user} />}/>
         <Route path="/instance/create" element={<CreateInstance />}/>
         <Route path="/instance/confirm" element={<ConfirmInstance />}/>

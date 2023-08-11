@@ -33,7 +33,7 @@ const CreateInstance = () => {
 
   return (
     <>
-    <h1>Create New Instance</h1>
+    <h1>Create Nothing New</h1>
     <Outlet />
     <TextField onChange={handleUpdateInstanceName} id="outlined-basic" label="Name" variant="outlined" />
     <FormControl fullWidth>
@@ -81,9 +81,9 @@ const ConfirmInstance = (props) => {
         setOpen(true)
         setTimeout(() => {
           navigate("/")  
-        }, 3000);
+        }, 1000);
       } else {
-        alert("failed to create instance: " + r)
+        alert("failed to create nothing: " + r)
       }
     })
   }
@@ -94,15 +94,15 @@ const ConfirmInstance = (props) => {
 
   return (
     <>
-    <h1>Confirm New Instance</h1>
+    <h1>Confirm Nothing New</h1>
     <h3>Name: {location.state.name}</h3>
     <h3>Plan: {location.state.plan}</h3>
     <h3>Total: ${pricing[location.state.plan]}/month</h3>
-    <Button disabled={createDisabled} onClick={handleCreateInstance} size="small" variant="outlined">Create Instance</Button>
+    <Button disabled={createDisabled} onClick={handleCreateInstance} size="small" variant="outlined">Create Nothing</Button>
     <Button onClick={handleCancel} color="secondary" size="small" variant="outlined">Cancel</Button>
     <Snackbar open={open} autoHideDuration={3000}>
       <Alert severity="success" sx={{ width: '100%' }}>
-        Successfully created instance, redirecting home in 3 seconds.
+        Successfully created nothing, redirecting home.
       </Alert>
     </Snackbar>
     <Outlet />
@@ -142,7 +142,7 @@ const EditInstance = (props) => {
       if (r.status === 'success') {
         navigate("/")
       } else {
-        alert("failed to delete instance: " + r)
+        alert("failed to delete nothing: " + r)
         setDeleteDisabled(false)
       }
     })
@@ -162,13 +162,13 @@ const EditInstance = (props) => {
 
   return (
     <>
-    <h1>Edit Instance</h1>
+    <h1>Edit Instance of Nothing</h1>
     <h3>Name: {location.state.name}</h3>
     <h3>Plan: {location.state.plan}</h3>
     <h3>Total: ${pricing[location.state.plan]}/month</h3>
     <br></br>
     <br></br>
-    <h1>Delete Instance</h1>
+    <h1>Delete Nothing</h1>
     <div>Are you sure you want to delete {location.state.name}? Type <i>{location.state.name}</i> to confirm deletion.</div>
     <TextField onChange={handleInstanceName} id="outlined-basic" label="Name" variant="outlined" />
     <Button disabled={deleteDisabled} onClick={handleDeleteInstance} size="small" variant="outlined">Delete</Button>

@@ -16,7 +16,7 @@ const Home = (props) => {
     if (!props.user.provenance || props.user.provenance === "heroku") {
       return <></>
     } else {
-      return <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Instance</Button>
+      return <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Nothing</Button>
     }
   }
 
@@ -41,7 +41,7 @@ const Home = (props) => {
     <br></br>
     {createInstanceButton()}
     <br></br>
-    <h1>Instances</h1>
+    <h1>Instances of Nothing</h1>
     <InstanceTable user={props.user} instances={instances}></InstanceTable>
     <Outlet />
   </>

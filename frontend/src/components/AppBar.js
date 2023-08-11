@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -13,7 +14,16 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 
+const pages = {
+  'About': '/about',
+  'Home': '/'
+};
+
 const ResponsiveAppBar = (props) => {
+  if (props.user.provenance && props.user.provenance !== "heroku") {
+    pages['Create'] = '/instance/create'
+  }
+
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
 
@@ -25,8 +35,8 @@ const ResponsiveAppBar = (props) => {
     setAnchorElUser(event.currentTarget);
   };
 
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
+  const handlePageNav = (page) => {
+    window.location.href = pages[page];
   };
 
   const handleCloseUserMenu = () => {
@@ -94,11 +104,16 @@ const ResponsiveAppBar = (props) => {
                 horizontal: 'left',
               }}
               open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
+              onClose={handlePageNav}
               sx={{
                 display: { xs: 'block', md: 'none' },
               }}
             >
+              {Object.keys(pages).map((page) => (
+                <MenuItem key={page} onClick={handlePageNav.bind(this, page)}>
+                  <Typography textAlign="center">{page}</Typography>
+                </MenuItem>
+              ))}
             </Menu>
           </Box>
           <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
@@ -121,6 +136,15 @@ const ResponsiveAppBar = (props) => {
             Nothing
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+          {Object.keys(pages).map((page) => (
+              <Button
+                key={page}
+                onClick={handlePageNav.bind(this, page)}
+                sx={{ my: 2, color: 'white', display: 'block' }}
+              >
+                {page}
+              </Button>
+            ))}
           </Box>
 
           <Box sx={{ flexGrow: 0 }}>

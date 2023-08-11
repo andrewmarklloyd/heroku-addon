@@ -1,24 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from "react-router-dom";
-import { Button } from '@mui/material';
+import { Outlet } from "react-router-dom";
 import InstanceTable from '../components/InstanceTable';
 
 const Home = (props) => {
-  const navigate = useNavigate();
-
   var [instances, setInstances] = useState([]);
-
-  const handleCreateInstance = () => {
-    navigate("/instance/create")
-  }
-
-  const createInstanceButton = () => {
-    if (!props.user.provenance || props.user.provenance === "heroku") {
-      return <></>
-    } else {
-      return <Button onClick={handleCreateInstance} size="small" variant="outlined">+ Create Nothing</Button>
-    }
-  }
 
   useEffect(() => {
     fetch("/api/instances", {
@@ -37,10 +22,6 @@ const Home = (props) => {
 
   return (
     <>
-    <br></br>
-    <br></br>
-    {createInstanceButton()}
-    <br></br>
     <h1>Instances of Nothing</h1>
     <InstanceTable user={props.user} instances={instances}></InstanceTable>
     <Outlet />

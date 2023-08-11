@@ -169,7 +169,7 @@ const ResponsiveAppBar = (props) => {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              <Typography textAlign="center">{props.user.email}</Typography>
+              <Typography textAlign="center">{props.user.name}</Typography>
               <Divider />
               {Object.keys(settings).map((key, index) => (
                 <MenuItem key={key} onClick={settings[key]}>

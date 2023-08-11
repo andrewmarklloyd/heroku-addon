@@ -52,7 +52,6 @@ const ResponsiveAppBar = (props) => {
   };
 
   var settings = {
-    'Profile': handleCloseUserMenu,
     'Account': handleAccount,
     'Logout': handleLogout
   }

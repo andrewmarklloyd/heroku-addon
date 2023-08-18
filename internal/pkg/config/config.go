@@ -69,6 +69,11 @@ func BuildConfig() (Server, error) {
 		err = errors.Join(err, fmt.Errorf("GITHUB_REDIRECT_URI env var is not set"))
 	}
 
+	stripeKey := os.Getenv("STRIPE_KEY")
+	if stripeKey == "" {
+		err = errors.Join(err, fmt.Errorf("STRIPE_KEY env var is not set"))
+	}
+
 	if err != nil {
 		return Server{}, err
 	}
@@ -91,6 +96,9 @@ func BuildConfig() (Server, error) {
 			ClientID:     githubClientID,
 			ClientSecret: githubClientSecret,
 			RedirectURL:  githubRedirectURL,
+		},
+		Stripe: Stripe{
+			Key: stripeKey,
 		},
 	}, nil
 }

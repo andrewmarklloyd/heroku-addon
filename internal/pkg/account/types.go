@@ -23,6 +23,7 @@ type Account struct {
 	AccountType  AccountType
 	AccessToken  string
 	RefreshToken string
+	StripeCustID string
 }
 
 type Instance struct {

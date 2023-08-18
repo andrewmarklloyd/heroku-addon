@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.10.9
+	github.com/stripe/stripe-go/v75 v75.1.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/oauth2 v0.10.0
 )

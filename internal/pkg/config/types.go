@@ -7,6 +7,7 @@ type Server struct {
 	SessionSecret   SessionSecret
 	Github          Github
 	Heroku          Heroku
+	Stripe          Stripe
 }
 
 type SessionSecret struct {
@@ -26,4 +27,8 @@ type Heroku struct {
 	AddonPassword string
 	ClientSecret  string
 	SSOSalt       string
+}
+
+type Stripe struct {
+	Key string
 }

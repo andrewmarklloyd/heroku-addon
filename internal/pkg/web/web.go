@@ -19,6 +19,8 @@ import (
 	"github.com/dghubble/gologin/github"
 	"github.com/dghubble/sessions"
 	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v75"
+	"github.com/stripe/stripe-go/v75/customer"
 	"golang.org/x/oauth2"
 	githubOAuth2 "golang.org/x/oauth2/github"
 
@@ -44,6 +46,7 @@ type WebServer struct {
 	herokuClient   heroku.HerokuClient
 	sessionStore   sessions.Store[string]
 	logger         *zap.SugaredLogger
+	stripeKey      string
 }
 
 func NewWebServer(logger *zap.SugaredLogger,
@@ -56,6 +59,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 		postgresClient: postgresClient,
 		herokuClient:   herokuClient,
 		logger:         logger,
+		stripeKey:      cfg.Stripe.Key,
 	}
 
 	oauth2Config := &oauth2.Config{
@@ -200,6 +204,21 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		var noAcctErr *postgres.AccountNotFound
 		if errors.As(err, &noAcctErr) {
+			stripe.Key = s.stripeKey
+			params := &stripe.CustomerParams{
+				Name:  user.Name,
+				Email: stripe.String(*user.Email),
+				Metadata: map[string]string{
+					"hello": "world",
+				},
+			}
+			cust, err := customer.New(params)
+			if err != nil {
+				s.logger.Errorf("creating new stripe customer: %s", err)
+				http.Redirect(w, req, "/login", http.StatusFound)
+				return
+			}
+
 			id := uuid.New().String()
 			a = account.Account{
 				UUID:         id,
@@ -208,6 +227,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 				AccountType:  account.AccountTypeGithub,
 				AccessToken:  "",
 				RefreshToken: "",
+				StripeCustID: cust.ID,
 			}
 
 			err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, a)

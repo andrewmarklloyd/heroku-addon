@@ -18,6 +18,9 @@ const (
 		accesstoken bytea,
 		refreshtoken bytea
 		);`
+
+	alterTableAccountStripeIDStmt = `ALTER TABLE account ADD COLUMN IF NOT EXISTS stripecustid text;`
+
 	createTableInstancesStmt = `CREATE TABLE IF NOT EXISTS instance(
 		id text PRIMARY KEY,
 		accountid text,
@@ -47,6 +50,11 @@ func NewPostgresClient(databaseURL string) (Client, error) {
 		return postgresClient, fmt.Errorf("executing create table account statement: %w", err)
 	}
 
+	_, err = db.Exec(alterTableAccountStripeIDStmt)
+	if err != nil {
+		return postgresClient, fmt.Errorf("executing alter table account statement: %w", err)
+	}
+
 	_, err = db.Exec(createTableInstancesStmt)
 	if err != nil {
 		return postgresClient, fmt.Errorf("executing create table instances statement: %w", err)
@@ -67,8 +75,8 @@ func (c *Client) CreateOrUpdateAccount(cryptoUtil crypto.Util, account account.A
 	}
 
 	// TODO: ensure excluded.* is encrypted
-	stmt := "INSERT INTO account(uuid, email, name, accounttype, accesstoken, refreshtoken) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (uuid) DO UPDATE SET email = excluded.email, name = excluded.name, accounttype = excluded.accounttype, accesstoken = excluded.accesstoken, refreshtoken = excluded.refreshtoken;"
-	_, err = c.sqlDB.Exec(stmt, account.UUID, account.Email, account.Name, account.AccountType, string(accessEnc), string(refreshEnc))
+	stmt := "INSERT INTO account(uuid, email, name, accounttype, accesstoken, refreshtoken, stripecustid) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (uuid) DO UPDATE SET email = excluded.email, name = excluded.name, accounttype = excluded.accounttype, accesstoken = excluded.accesstoken, refreshtoken = excluded.refreshtoken, stripecustid = excluded.stripecustid;"
+	_, err = c.sqlDB.Exec(stmt, account.UUID, account.Email, account.Name, account.AccountType, string(accessEnc), string(refreshEnc), account.StripeCustID)
 	if err != nil {
 		return err
 	}
@@ -108,7 +116,7 @@ func (c *Client) GetAccountFromEmail(cryptoUtil crypto.Util, email, accountType 
 
 	for rows.Next() {
 		var a account.Account
-		err := rows.Scan(&a.UUID, &a.Email, &a.Name, &a.AccountType, &a.AccessToken, &a.RefreshToken)
+		err := rows.Scan(&a.UUID, &a.Email, &a.Name, &a.AccountType, &a.AccessToken, &a.RefreshToken, &a.StripeCustID)
 		if err != nil {
 			return acct, err
 		}

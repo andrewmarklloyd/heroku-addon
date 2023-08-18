@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/config"
@@ -194,7 +195,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if *user.Email != os.Getenv("AUTHORIZED_USER") {
+	if !strings.Contains(os.Getenv("AUTHORIZED_USERS"), *user.Email) {
 		s.logger.Errorf("non authorized user attempted login: %s", *user.Email)
 		http.Redirect(w, req, "/login", http.StatusFound)
 		return

@@ -345,6 +345,7 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 		AccountType:  account.AccountTypeHeroku,
 		AccessToken:  oauthResp.AccessToken,
 		RefreshToken: oauthResp.RefreshToken,
+		StripeCustID: "", // payment handled by Heroku, not required
 	}
 	err = s.postgresClient.CreateOrUpdateAccount(s.cryptoUtil, acct)
 	if err != nil {

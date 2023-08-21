@@ -87,11 +87,13 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 
 	stripe.Key = s.stripeKey
 	params := &stripe.PaymentIntentParams{
+		// todo: get amount from somewhere
 		Amount: stripe.Int64(2000),
 		AutomaticPaymentMethods: &stripe.PaymentIntentAutomaticPaymentMethodsParams{
 			Enabled: stripe.Bool(true),
 		},
 		Currency: stripe.String(string(stripe.CurrencyUSD)),
+		Customer: stripe.String(userInfo.StripeID),
 	}
 	pi, err := paymentintent.New(params)
 	if err != nil {

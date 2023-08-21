@@ -95,6 +95,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/logout", w.requireLogin(w.logout()))
 
 	router.Handle("/api/user", w.requireLogin(http.HandlerFunc(w.getUser))).Methods(get)
+	router.Handle("/api/pricing", http.HandlerFunc(w.getPricing)).Methods(get)
 	router.Handle("/api/instances", w.requireLogin(http.HandlerFunc(w.getInstances))).Methods(get)
 	router.Handle("/api/new-instance", w.requireLogin(http.HandlerFunc(w.newInstance))).Methods(post)
 	router.Handle("/api/delete-instance", w.requireLogin(http.HandlerFunc(w.deleteInstance))).Methods(post)
@@ -413,4 +414,8 @@ func (s *WebServer) requireHerokuAuth(next http.Handler) http.Handler {
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `ok`)
+}
+
+func (s WebServer) getPricing(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprint(w, `{"free":0,"staging":10,"production":35}`)
 }

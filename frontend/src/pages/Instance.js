@@ -4,10 +4,15 @@ import { Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@m
 import MuiAlert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 import { GetPricing } from '../helpers/Pricing'
+import {loadStripe} from '@stripe/stripe-js';
+import {Elements} from '@stripe/react-stripe-js';
+import CheckoutForm from '../components/CheckoutForm';
 
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 const CreateInstance = () => {
   const navigate = useNavigate();
@@ -57,16 +62,29 @@ const CreateInstance = () => {
 }
 
 const ConfirmInstance = (props) => {
-  const [open, setOpen] = useState(false);
+  const [open] = useState(false);
   const [createDisabled, setCreateDisabled] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+
+  const appearance = {
+    theme: 'stripe',
+  };
+  const options = {
+    clientSecret,
+    appearance,
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
   const pricing = GetPricing()
+
+  if (!location.state) {
+    navigate("/")
+  }
   
   const handleCreateInstance = () => {
     setCreateDisabled(true)
-    fetch("/api/new-instance", {
+    fetch("/api/create-payment-intent", {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -78,14 +96,32 @@ const ConfirmInstance = (props) => {
     .then(r => r.json())
     .then(r => {
       if (r.status === 'success') {
-        setOpen(true)
-        setTimeout(() => {
-          navigate("/")  
-        }, 1000);
+        setClientSecret(r.clientSecret)
       } else {
-        alert("failed to create nothing: " + r)
+        alert("failed to create payment intent: " + r)
+        return
       }
     })
+    // fetch("/api/new-instance", {
+    //   method: 'POST',
+    //   credentials: 'same-origin',
+    //   headers: {
+    //     'Content-Type': 'application/json'
+    //   },
+    //   referrerPolicy: 'no-referrer',
+    //   body: JSON.stringify({"name": location.state.name, "plan": location.state.plan})
+    // })
+    // .then(r => r.json())
+    // .then(r => {
+    //   if (r.status === 'success') {
+    //     setOpen(true)
+    //     setTimeout(() => {
+    //       navigate("/")  
+    //     }, 1000);
+    //   } else {
+    //     alert("failed to create nothing: " + r)
+    //   }
+    // })
   }
 
   const handleCancel = () => {
@@ -95,11 +131,16 @@ const ConfirmInstance = (props) => {
   return (
     <>
     <h1>Confirm Nothing New</h1>
-    <h3>Name: {location.state.name}</h3>
-    <h3>Plan: {location.state.plan}</h3>
-    <h3>Total: ${pricing[location.state.plan]}/month</h3>
+    <h3>Name: {location.state ? location.state.name : ""}</h3>
+    <h3>Plan: {location.state ? location.state.plan : ""}</h3>
+    <h3>Total: ${location.state ? pricing[location.state.plan] : ""}/month</h3>
     <Button disabled={createDisabled} onClick={handleCreateInstance} size="small" variant="outlined">Create Nothing</Button>
     <Button onClick={handleCancel} color="secondary" size="small" variant="outlined">Cancel</Button>
+    {clientSecret && (
+      <Elements options={options} stripe={stripePromise}>
+        <CheckoutForm></CheckoutForm>
+      </Elements>
+    )}
     <Snackbar open={open} autoHideDuration={3000}>
       <Alert severity="success" sx={{ width: '100%' }}>
         Successfully created nothing, redirecting home.

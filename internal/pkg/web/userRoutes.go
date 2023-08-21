@@ -7,6 +7,8 @@ import (
 
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
 	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v75"
+	"github.com/stripe/stripe-go/v75/paymentintent"
 )
 
 func (s WebServer) getUser(w http.ResponseWriter, req *http.Request) {
@@ -51,6 +53,54 @@ func (s WebServer) getInstances(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Fprint(w, string(iJson))
+}
+
+func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
+	userInfo, err := s.getUserInfo(req)
+	if err != nil {
+		s.logger.Errorf("getting user info: %s", err)
+		http.Error(w, "could not get user", http.StatusBadRequest)
+		return
+	}
+
+	if userInfo.Provenance == "heroku" {
+		s.logger.Errorf("heroku user cannot create payment intent")
+		http.Error(w, `{"error":"heroku user cannot create payment intent"}`, http.StatusBadRequest)
+		return
+	}
+
+	type instanceRequest struct {
+		Name string `json:"name"`
+		Plan string `json:"plan"`
+	}
+	var ir instanceRequest
+	err = json.NewDecoder(req.Body).Decode(&ir)
+	if err != nil {
+		http.Error(w, `{"error":"parsing request"}`, http.StatusBadRequest)
+		return
+	}
+
+	if ir.Name == "" || ir.Plan == "" {
+		http.Error(w, `{"error":"name and plan are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	stripe.Key = s.stripeKey
+	params := &stripe.PaymentIntentParams{
+		Amount: stripe.Int64(2000),
+		AutomaticPaymentMethods: &stripe.PaymentIntentAutomaticPaymentMethodsParams{
+			Enabled: stripe.Bool(true),
+		},
+		Currency: stripe.String(string(stripe.CurrencyUSD)),
+	}
+	pi, err := paymentintent.New(params)
+	if err != nil {
+		s.logger.Errorf("creating payment intent %s", err.Error())
+		http.Error(w, `{"error":"error creating payment intent"}`, http.StatusBadRequest)
+		return
+	}
+
+	fmt.Fprintf(w, `{"status":"success","clientSecret":"%s"}`, pi.ClientSecret)
 }
 
 func (s WebServer) newInstance(w http.ResponseWriter, req *http.Request) {
@@ -163,10 +213,19 @@ func (s WebServer) getUserInfo(req *http.Request) (UserInfo, error) {
 		return UserInfo{}, fmt.Errorf("provenance from session was not found")
 	}
 
+	stripeID := ""
+	if provenance != "heroku" {
+		stripeID, ok = session.GetOk("stripe-id")
+		if !ok {
+			return UserInfo{}, fmt.Errorf("stripe-id from session was not found")
+		}
+	}
+
 	return UserInfo{
 		UserID:     userID,
 		Email:      email,
 		Name:       name,
 		Provenance: provenance,
+		StripeID:   stripeID,
 	}, nil
 }

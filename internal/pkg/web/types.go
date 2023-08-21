@@ -9,4 +9,5 @@ type UserInfo struct {
 	Email      string `json:"email"`
 	Name       string `json:"name"`
 	Provenance string `json:"provenance"`
+	StripeID   string `json:"stripeID"`
 }

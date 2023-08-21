@@ -3,6 +3,7 @@ module github.com/andrewmarklloyd/heroku-addon
 go 1.20
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dghubble/gologin v2.1.0+incompatible
 	github.com/dghubble/sessions v0.4.0
 	github.com/google/uuid v1.3.0

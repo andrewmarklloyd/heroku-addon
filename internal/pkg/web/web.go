@@ -98,6 +98,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/api/instances", w.requireLogin(http.HandlerFunc(w.getInstances))).Methods(get)
 	router.Handle("/api/new-instance", w.requireLogin(http.HandlerFunc(w.newInstance))).Methods(post)
 	router.Handle("/api/delete-instance", w.requireLogin(http.HandlerFunc(w.deleteInstance))).Methods(post)
+	router.Handle("/api/create-payment-intent", w.requireLogin(http.HandlerFunc(w.newPaymentIntent))).Methods(post)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",
@@ -248,6 +249,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	session.Set("user-email", *user.Email)
 	session.Set("user-id", a.UUID)
 	session.Set("user-name", a.Name)
+	session.Set("stripe-id", a.StripeCustID)
 	session.Set("provenance", "github")
 	if err := session.Save(w); err != nil {
 		s.logger.Errorf("saving session: %s", err)

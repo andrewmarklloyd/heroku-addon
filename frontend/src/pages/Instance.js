@@ -14,7 +14,7 @@ const Alert = forwardRef(function Alert(props, ref) {
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
-const CreateInstance = () => {
+const CreateInstance = (props) => {
   const navigate = useNavigate();
 
   var [newInstanceName, setNewInstanceName] = useState('');
@@ -50,9 +50,9 @@ const CreateInstance = () => {
         label="Plan"
         onChange={handleUpdateInstancePlan}
       >
-      <MenuItem value={"free"}>Free ($0/month)</MenuItem>
-      <MenuItem value={"staging"}>Staging ($10/month)</MenuItem>
-      <MenuItem value={"production"}>Production ($35/month)</MenuItem>
+      <MenuItem value={"free"}>Free (${LookupPrice(props.pricing, 'free').price}/month)</MenuItem>
+      <MenuItem value={"staging"}>Staging (${LookupPrice(props.pricing, 'staging').price}/month)</MenuItem>
+      <MenuItem value={"production"}>Production (${LookupPrice(props.pricing, 'production').price}/month)</MenuItem>
     </Select>
   </FormControl>
   <Button onClick={handleCreateInstance} size="small" variant="outlined">Review</Button>
@@ -101,26 +101,6 @@ const ConfirmInstance = (props) => {
         return
       }
     })
-    // fetch("/api/new-instance", {
-    //   method: 'POST',
-    //   credentials: 'same-origin',
-    //   headers: {
-    //     'Content-Type': 'application/json'
-    //   },
-    //   referrerPolicy: 'no-referrer',
-    //   body: JSON.stringify({"name": location.state.name, "plan": location.state.plan})
-    // })
-    // .then(r => r.json())
-    // .then(r => {
-    //   if (r.status === 'success') {
-    //     setOpen(true)
-    //     setTimeout(() => {
-    //       navigate("/")  
-    //     }, 1000);
-    //   } else {
-    //     alert("failed to create nothing: " + r)
-    //   }
-    // })
   }
 
   const handleCancel = () => {

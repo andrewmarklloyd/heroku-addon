@@ -8,6 +8,7 @@ import Account from "./pages/Account";
 import About from "./pages/About";
 import { GetPricing } from './helpers/Pricing'
 import { CreateInstance, ConfirmInstance, EditInstance } from './pages/Instance';
+import { OrderComplete } from './pages/OrderComplete';
 
 const darkTheme = createTheme({
   palette: {
@@ -56,6 +57,7 @@ const App = () => {
         <Route path="/instance/create" element={<CreateInstance pricing={pricingState} />}/>
         <Route path="/instance/confirm" element={<ConfirmInstance pricing={pricingState} />}/>
         <Route path="/instance/edit" element={<EditInstance pricing={pricingState} />}/>
+        <Route path="/order/complete" element={<OrderComplete/>}/>
       </Routes>
     </BrowserRouter>
     </ThemeProvider>

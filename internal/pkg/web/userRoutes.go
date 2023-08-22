@@ -85,15 +85,19 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	pricePennies := account.LookupPricingPlan(ir.Plan).PriceDollars * 100
 	stripe.Key = s.stripeKey
 	params := &stripe.PaymentIntentParams{
-		// todo: get amount from somewhere
-		Amount: stripe.Int64(2000),
+		Amount: stripe.Int64(int64(pricePennies)),
 		AutomaticPaymentMethods: &stripe.PaymentIntentAutomaticPaymentMethodsParams{
 			Enabled: stripe.Bool(true),
 		},
 		Currency: stripe.String(string(stripe.CurrencyUSD)),
 		Customer: stripe.String(userInfo.StripeID),
+		Metadata: map[string]string{
+			"plan": ir.Plan,
+			"name": ir.Name,
+		},
 	}
 	pi, err := paymentintent.New(params)
 	if err != nil {

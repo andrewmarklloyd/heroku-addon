@@ -6,6 +6,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Home from "./pages/Home";
 import Account from "./pages/Account";
 import About from "./pages/About";
+import { GetPricing } from './helpers/Pricing'
 import { CreateInstance, ConfirmInstance, EditInstance } from './pages/Instance';
 
 const darkTheme = createTheme({
@@ -16,8 +17,14 @@ const darkTheme = createTheme({
 
 const App = () => {
   var [user, setUser] = useState({});
+  var [pricingState, setPricingState] = useState([]);
 
   useEffect(() => {
+    const pricing = GetPricing()
+    pricing.then(p=>{
+      setPricingState(p)
+    })
+
     fetch("/api/user", {
         method: 'GET',
         credentials: 'same-origin',
@@ -39,16 +46,16 @@ const App = () => {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <ResponsiveAppBar user={user}></ResponsiveAppBar>
+      <ResponsiveAppBar user={user} pricing={pricingState}></ResponsiveAppBar>
       <CssBaseline />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home user={user}/>}/>
         <Route path="/about" element={<About/>}/>
         <Route path="/account" element={<Account user={user} />}/>
-        <Route path="/instance/create" element={<CreateInstance />}/>
-        <Route path="/instance/confirm" element={<ConfirmInstance />}/>
-        <Route path="/instance/edit" element={<EditInstance />}/>
+        <Route path="/instance/create" element={<CreateInstance pricing={pricingState} />}/>
+        <Route path="/instance/confirm" element={<ConfirmInstance pricing={pricingState} />}/>
+        <Route path="/instance/edit" element={<EditInstance pricing={pricingState} />}/>
       </Routes>
     </BrowserRouter>
     </ThemeProvider>

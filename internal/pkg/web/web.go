@@ -417,5 +417,11 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) getPricing(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprint(w, `{"free":0,"staging":10,"production":35}`)
+	plans, err := json.Marshal(account.PricingPlans)
+	if err != nil {
+		s.logger.Errorf("marshalling pricing plans to json: %s", err)
+		http.Error(w, "could not get pricing", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, string(plans))
 }

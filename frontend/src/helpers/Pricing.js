@@ -10,6 +10,17 @@ const GetPricing = async () => {
     return await r.json()
 }
 
+const LookupPrice = (pricing, planName) => {
+    var returned = {}
+    pricing.forEach(element => {
+        if (element.name === planName) {
+            returned = element
+        }
+    })
+    return returned
+}
+
 export {
-    GetPricing
+    GetPricing,
+    LookupPrice
 }

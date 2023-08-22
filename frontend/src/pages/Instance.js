@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import { GetPricing } from '../helpers/Pricing'
+import { LookupPrice } from '../helpers/Pricing'
 import {loadStripe} from '@stripe/stripe-js';
 import {Elements} from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
@@ -76,7 +76,6 @@ const ConfirmInstance = (props) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const pricing = GetPricing()
 
   if (!location.state) {
     navigate("/")
@@ -133,7 +132,7 @@ const ConfirmInstance = (props) => {
     <h1>Confirm Nothing New</h1>
     <h3>Name: {location.state ? location.state.name : ""}</h3>
     <h3>Plan: {location.state ? location.state.plan : ""}</h3>
-    <h3>Total: ${location.state ? pricing[location.state.plan] : ""}/month</h3>
+    <h3>Total: ${location.state ? LookupPrice(props.pricing, location.state.plan).price : ""}/month</h3>
     <Button disabled={createDisabled} onClick={handleCreateInstance} size="small" variant="outlined">Create Nothing</Button>
     <Button onClick={handleCancel} color="secondary" size="small" variant="outlined">Cancel</Button>
     {clientSecret && (
@@ -153,7 +152,6 @@ const ConfirmInstance = (props) => {
 
 const EditInstance = (props) => {
   const navigate = useNavigate();
-  const pricing = GetPricing()
   const location = useLocation();
   var [instanceName, setInstanceName] = useState('');
   const [deleteDisabled, setDeleteDisabled] = useState(true);
@@ -206,7 +204,7 @@ const EditInstance = (props) => {
     <h1>Edit Instance of Nothing</h1>
     <h3>Name: {location.state.name}</h3>
     <h3>Plan: {location.state.plan}</h3>
-    <h3>Total: ${pricing[location.state.plan]}/month</h3>
+    <h3>Total: ${LookupPrice(props.pricing, location.state.plan).price}/month</h3>
     <br></br>
     <br></br>
     <h1>Delete Nothing</h1>

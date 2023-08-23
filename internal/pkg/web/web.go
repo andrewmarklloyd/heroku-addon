@@ -100,6 +100,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/api/new-instance", w.requireLogin(http.HandlerFunc(w.newInstance))).Methods(post)
 	router.Handle("/api/delete-instance", w.requireLogin(http.HandlerFunc(w.deleteInstance))).Methods(post)
 	router.Handle("/api/create-payment-intent", w.requireLogin(http.HandlerFunc(w.newPaymentIntent))).Methods(post)
+	router.Handle("/stripe-webhooks", http.HandlerFunc(w.handleStripeWebhook)).Methods(post)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",

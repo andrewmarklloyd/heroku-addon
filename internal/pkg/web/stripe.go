@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
+	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v75"
 	"github.com/stripe/stripe-go/v75/webhook"
 )
@@ -46,6 +48,7 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 	// Unmarshal the event data into an appropriate struct depending on its Type
 	switch event.Type {
 	case "charge.succeeded":
+		s.logger.Info("charge.succeeded event received")
 		var charge stripe.Charge
 		err := json.Unmarshal(event.Data.Raw, &charge)
 		if err != nil {
@@ -53,16 +56,49 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		fmt.Println("Successful charge.")
-		fmt.Println("customer", charge.Customer.ID)
-		fmt.Println("metadata", charge.Metadata)
-		fmt.Println("paymentintent", charge.PaymentIntent.ID)
 
-		// Then define and call a func to handle the successful attachment of a PaymentMethod.
-		// handlePaymentMethodAttached(paymentMethod)
+		err = s.handleChargeSucceeded(charge)
+		if err != nil {
+			s.logger.Errorf("handling charge succeeded: %s", err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 	default:
 		// fmt.Fprintf(os.Stderr, "Unhandled event type: %s\n", event.Type)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s WebServer) handleChargeSucceeded(charge stripe.Charge) error {
+	a, err := s.postgresClient.GetAccountFromStripeCustID(s.cryptoUtil, charge.Customer.ID)
+	if err != nil {
+		return fmt.Errorf("getting account from stripe customer id: %w", err)
+	}
+
+	instanceName, ok := charge.Metadata["name"]
+	if !ok {
+		return fmt.Errorf("name key in charge metadata not found")
+	}
+
+	instancePlan, ok := charge.Metadata["plan"]
+	if !ok {
+		return fmt.Errorf("plan key in charge metadata not found")
+	}
+
+	i := account.Instance{
+		AccountID: a.UUID,
+		Id:        uuid.New().String(),
+		Plan:      instancePlan,
+		Name:      instanceName,
+	}
+
+	err = s.postgresClient.CreateOrUpdateInstance(i)
+	if err != nil {
+		s.logger.Errorf("creating instance: %s", err)
+		return fmt.Errorf("creating instance: %w", err)
+	}
+
+	return nil
 }

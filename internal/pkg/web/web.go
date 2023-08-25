@@ -41,13 +41,14 @@ type ContextKey string
 const ContextProvenanceKey ContextKey = "provenance"
 
 type WebServer struct {
-	HttpServer     *http.Server
-	cryptoUtil     crypto.Util
-	postgresClient postgres.Client
-	herokuClient   heroku.HerokuClient
-	sessionStore   sessions.Store[string]
-	logger         *zap.SugaredLogger
-	stripeKey      string
+	HttpServer                 *http.Server
+	cryptoUtil                 crypto.Util
+	postgresClient             postgres.Client
+	herokuClient               heroku.HerokuClient
+	sessionStore               sessions.Store[string]
+	logger                     *zap.SugaredLogger
+	stripeKey                  string
+	stripeWebhookSigningSecret string
 }
 
 func NewWebServer(logger *zap.SugaredLogger,
@@ -56,11 +57,12 @@ func NewWebServer(logger *zap.SugaredLogger,
 	postgresClient postgres.Client,
 	herokuClient heroku.HerokuClient) (WebServer, error) {
 	w := WebServer{
-		cryptoUtil:     cryptoUtil,
-		postgresClient: postgresClient,
-		herokuClient:   herokuClient,
-		logger:         logger,
-		stripeKey:      cfg.Stripe.Key,
+		cryptoUtil:                 cryptoUtil,
+		postgresClient:             postgresClient,
+		herokuClient:               herokuClient,
+		logger:                     logger,
+		stripeKey:                  cfg.Stripe.Key,
+		stripeWebhookSigningSecret: cfg.Stripe.WebhookSigningSecret,
 	}
 
 	oauth2Config := &oauth2.Config{

@@ -86,21 +86,16 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	// Replace this endpoint secret with your endpoint's unique secret
-	// If you are testing with the CLI, find the secret by running 'stripe listen'
-	// If you are using an endpoint defined with the API or dashboard, look in your webhook settings
-	// at https://dashboard.stripe.com/webhooks
-	endpointSecret := ""
 	signatureHeader := req.Header.Get("Stripe-Signature")
-	event, err = webhook.ConstructEventWithOptions(payload, signatureHeader, endpointSecret, webhook.ConstructEventOptions{
+	event, err = webhook.ConstructEventWithOptions(payload, signatureHeader, s.stripeWebhookSigningSecret, webhook.ConstructEventOptions{
 		IgnoreAPIVersionMismatch: true, // TODO: fix this
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️  Webhook signature verification failed. %v\n", err)
-		w.WriteHeader(http.StatusBadRequest) // Return a 400 error on a bad signature
+		s.logger.Error("webhook signature verification failed: %s", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// Unmarshal the event data into an appropriate struct depending on its Type
+
 	switch event.Type {
 	case "charge.succeeded":
 		s.logger.Info("charge.succeeded event received")

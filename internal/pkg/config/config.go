@@ -74,6 +74,11 @@ func BuildConfig() (Server, error) {
 		err = errors.Join(err, fmt.Errorf("STRIPE_KEY env var is not set"))
 	}
 
+	stripeWebhookSigningSecret := os.Getenv("STRIPE_WEBHOOK_SIGNING_SECRET")
+	if stripeWebhookSigningSecret == "" {
+		err = errors.Join(err, fmt.Errorf("STRIPE_WEBHOOK_SIGNING_SECRET env var is not set"))
+	}
+
 	if err != nil {
 		return Server{}, err
 	}
@@ -98,7 +103,8 @@ func BuildConfig() (Server, error) {
 			RedirectURL:  githubRedirectURL,
 		},
 		Stripe: Stripe{
-			Key: stripeKey,
+			Key:                  stripeKey,
+			WebhookSigningSecret: stripeWebhookSigningSecret,
 		},
 	}, nil
 }

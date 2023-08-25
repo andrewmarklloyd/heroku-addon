@@ -3,13 +3,18 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import { GetPricing } from '../helpers/Pricing'
+import { LookupPrice } from '../helpers/Pricing'
+import {loadStripe} from '@stripe/stripe-js';
+import {Elements} from '@stripe/react-stripe-js';
+import CheckoutForm from '../components/CheckoutForm';
 
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-const CreateInstance = () => {
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
+
+const CreateInstance = (props) => {
   const navigate = useNavigate();
 
   var [newInstanceName, setNewInstanceName] = useState('');
@@ -45,9 +50,9 @@ const CreateInstance = () => {
         label="Plan"
         onChange={handleUpdateInstancePlan}
       >
-      <MenuItem value={"free"}>Free ($0/month)</MenuItem>
-      <MenuItem value={"staging"}>Staging ($10/month)</MenuItem>
-      <MenuItem value={"production"}>Production ($35/month)</MenuItem>
+      <MenuItem value={"free"}>Free (${LookupPrice(props.pricing, 'free').price}/month)</MenuItem>
+      <MenuItem value={"staging"}>Staging (${LookupPrice(props.pricing, 'staging').price}/month)</MenuItem>
+      <MenuItem value={"production"}>Production (${LookupPrice(props.pricing, 'production').price}/month)</MenuItem>
     </Select>
   </FormControl>
   <Button onClick={handleCreateInstance} size="small" variant="outlined">Review</Button>
@@ -57,16 +62,28 @@ const CreateInstance = () => {
 }
 
 const ConfirmInstance = (props) => {
-  const [open, setOpen] = useState(false);
+  const [open] = useState(false);
   const [createDisabled, setCreateDisabled] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+
+  const appearance = {
+    theme: 'stripe',
+  };
+  const options = {
+    clientSecret,
+    appearance,
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
-  const pricing = GetPricing()
+
+  if (!location.state) {
+    navigate("/")
+  }
   
   const handleCreateInstance = () => {
     setCreateDisabled(true)
-    fetch("/api/new-instance", {
+    fetch("/api/create-payment-intent", {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -78,12 +95,10 @@ const ConfirmInstance = (props) => {
     .then(r => r.json())
     .then(r => {
       if (r.status === 'success') {
-        setOpen(true)
-        setTimeout(() => {
-          navigate("/")  
-        }, 1000);
+        setClientSecret(r.clientSecret)
       } else {
-        alert("failed to create nothing: " + r)
+        alert("failed to create payment intent: " + r)
+        return
       }
     })
   }
@@ -95,11 +110,16 @@ const ConfirmInstance = (props) => {
   return (
     <>
     <h1>Confirm Nothing New</h1>
-    <h3>Name: {location.state.name}</h3>
-    <h3>Plan: {location.state.plan}</h3>
-    <h3>Total: ${pricing[location.state.plan]}/month</h3>
+    <h3>Name: {location.state ? location.state.name : ""}</h3>
+    <h3>Plan: {location.state ? location.state.plan : ""}</h3>
+    <h3>Total: ${location.state ? LookupPrice(props.pricing, location.state.plan).price : ""}/month</h3>
     <Button disabled={createDisabled} onClick={handleCreateInstance} size="small" variant="outlined">Create Nothing</Button>
     <Button onClick={handleCancel} color="secondary" size="small" variant="outlined">Cancel</Button>
+    {clientSecret && (
+      <Elements options={options} stripe={stripePromise}>
+        <CheckoutForm></CheckoutForm>
+      </Elements>
+    )}
     <Snackbar open={open} autoHideDuration={3000}>
       <Alert severity="success" sx={{ width: '100%' }}>
         Successfully created nothing, redirecting home.
@@ -112,7 +132,6 @@ const ConfirmInstance = (props) => {
 
 const EditInstance = (props) => {
   const navigate = useNavigate();
-  const pricing = GetPricing()
   const location = useLocation();
   var [instanceName, setInstanceName] = useState('');
   const [deleteDisabled, setDeleteDisabled] = useState(true);
@@ -165,7 +184,7 @@ const EditInstance = (props) => {
     <h1>Edit Instance of Nothing</h1>
     <h3>Name: {location.state.name}</h3>
     <h3>Plan: {location.state.plan}</h3>
-    <h3>Total: ${pricing[location.state.plan]}/month</h3>
+    <h3>Total: ${LookupPrice(props.pricing, location.state.plan).price}/month</h3>
     <br></br>
     <br></br>
     <h1>Delete Nothing</h1>

@@ -41,13 +41,14 @@ type ContextKey string
 const ContextProvenanceKey ContextKey = "provenance"
 
 type WebServer struct {
-	HttpServer     *http.Server
-	cryptoUtil     crypto.Util
-	postgresClient postgres.Client
-	herokuClient   heroku.HerokuClient
-	sessionStore   sessions.Store[string]
-	logger         *zap.SugaredLogger
-	stripeKey      string
+	HttpServer                 *http.Server
+	cryptoUtil                 crypto.Util
+	postgresClient             postgres.Client
+	herokuClient               heroku.HerokuClient
+	sessionStore               sessions.Store[string]
+	logger                     *zap.SugaredLogger
+	stripeKey                  string
+	stripeWebhookSigningSecret string
 }
 
 func NewWebServer(logger *zap.SugaredLogger,
@@ -56,11 +57,12 @@ func NewWebServer(logger *zap.SugaredLogger,
 	postgresClient postgres.Client,
 	herokuClient heroku.HerokuClient) (WebServer, error) {
 	w := WebServer{
-		cryptoUtil:     cryptoUtil,
-		postgresClient: postgresClient,
-		herokuClient:   herokuClient,
-		logger:         logger,
-		stripeKey:      cfg.Stripe.Key,
+		cryptoUtil:                 cryptoUtil,
+		postgresClient:             postgresClient,
+		herokuClient:               herokuClient,
+		logger:                     logger,
+		stripeKey:                  cfg.Stripe.Key,
+		stripeWebhookSigningSecret: cfg.Stripe.WebhookSigningSecret,
 	}
 
 	oauth2Config := &oauth2.Config{
@@ -95,9 +97,12 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/logout", w.requireLogin(w.logout()))
 
 	router.Handle("/api/user", w.requireLogin(http.HandlerFunc(w.getUser))).Methods(get)
+	router.Handle("/api/pricing", http.HandlerFunc(w.getPricing)).Methods(get)
 	router.Handle("/api/instances", w.requireLogin(http.HandlerFunc(w.getInstances))).Methods(get)
 	router.Handle("/api/new-instance", w.requireLogin(http.HandlerFunc(w.newInstance))).Methods(post)
 	router.Handle("/api/delete-instance", w.requireLogin(http.HandlerFunc(w.deleteInstance))).Methods(post)
+	router.Handle("/api/create-payment-intent", w.requireLogin(http.HandlerFunc(w.newPaymentIntent))).Methods(post)
+	router.Handle("/stripe-webhooks", http.HandlerFunc(w.handleStripeWebhook)).Methods(post)
 
 	spa := spa.SpaHandler{
 		StaticPath: "frontend/build",
@@ -248,6 +253,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	session.Set("user-email", *user.Email)
 	session.Set("user-id", a.UUID)
 	session.Set("user-name", a.Name)
+	session.Set("stripe-id", a.StripeCustID)
 	session.Set("provenance", "github")
 	if err := session.Save(w); err != nil {
 		s.logger.Errorf("saving session: %s", err)
@@ -411,4 +417,14 @@ func (s *WebServer) requireHerokuAuth(next http.Handler) http.Handler {
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `ok`)
+}
+
+func (s WebServer) getPricing(w http.ResponseWriter, req *http.Request) {
+	plans, err := json.Marshal(account.PricingPlans)
+	if err != nil {
+		s.logger.Errorf("marshalling pricing plans to json: %s", err)
+		http.Error(w, "could not get pricing", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, string(plans))
 }

@@ -149,6 +149,49 @@ func (c *Client) GetAccountFromEmail(cryptoUtil crypto.Util, email, accountType 
 	return accounts[0], nil
 }
 
+func (c *Client) GetAccountFromStripeCustID(cryptoUtil crypto.Util, stripeCustID string) (account.Account, error) {
+	var accounts []account.Account
+	var acct account.Account
+	stmt := `SELECT * FROM account WHERE stripecustid = $1 LIMIT 1`
+	rows, err := c.sqlDB.Query(stmt, stripeCustID)
+	if err != nil {
+		return acct, fmt.Errorf("executing select query: %s", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var a account.Account
+		err := rows.Scan(&a.UUID, &a.Email, &a.Name, &a.AccountType, &a.AccessToken, &a.RefreshToken, &a.StripeCustID)
+		if err != nil {
+			return acct, err
+		}
+
+		accessToken, err := cryptoUtil.Decrypt([]byte(a.AccessToken))
+		if err != nil {
+			return acct, err
+		}
+
+		refreshToken, err := cryptoUtil.Decrypt([]byte(a.RefreshToken))
+		if err != nil {
+			return acct, err
+		}
+
+		a.AccessToken = string(accessToken)
+		a.RefreshToken = string(refreshToken)
+		accounts = append(accounts, a)
+	}
+
+	if len(accounts) == 0 {
+		return account.Account{}, &AccountNotFound{}
+	}
+
+	if len(accounts) > 1 {
+		return account.Account{}, fmt.Errorf("more than 1 account was returned for stripecustid %s", stripeCustID)
+	}
+
+	return accounts[0], nil
+}
+
 func (c *Client) CreateOrUpdateInstance(instance account.Instance) error {
 	stmt := "INSERT INTO instance(id, accountid, plan, name) VALUES($1, $2, $3, $4);"
 	_, err := c.sqlDB.Exec(stmt, instance.Id, instance.AccountID, instance.Plan, instance.Name)

@@ -163,10 +163,19 @@ func (s WebServer) getUserInfo(req *http.Request) (UserInfo, error) {
 		return UserInfo{}, fmt.Errorf("provenance from session was not found")
 	}
 
+	stripeID := ""
+	if provenance != "heroku" {
+		stripeID, ok = session.GetOk("stripe-id")
+		if !ok {
+			return UserInfo{}, fmt.Errorf("stripe-id from session was not found")
+		}
+	}
+
 	return UserInfo{
 		UserID:     userID,
 		Email:      email,
 		Name:       name,
 		Provenance: provenance,
+		StripeID:   stripeID,
 	}, nil
 }

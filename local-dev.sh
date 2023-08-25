@@ -4,6 +4,7 @@ set -e
 
 export PORT=8080
 export CI=true
+export REACT_APP_STRIPE_PUBLIC_KEY=$(op read op://heroku-addon/config/REACT_APP_STRIPE_PUBLIC_KEY)
 
 if [[ ${1} != 'skip-front' ]]; then
     cd frontend

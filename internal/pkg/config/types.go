@@ -30,5 +30,6 @@ type Heroku struct {
 }
 
 type Stripe struct {
-	Key string
+	Key                  string
+	WebhookSigningSecret string
 }

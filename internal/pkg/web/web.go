@@ -18,6 +18,7 @@ import (
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/spa"
 	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/github"
+	oauth2Login "github.com/dghubble/gologin/oauth2"
 	"github.com/dghubble/sessions"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v75"
@@ -200,7 +201,13 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Println(ctx)
+	token, err := oauth2Login.TokenFromContext(ctx)
+	if err != nil {
+		s.logger.Errorf("getting github token from context: %s", err.Error())
+	}
+	if token == nil {
+		s.logger.Errorf("github token is nil, cannot login")
+	}
 
 	s.logger.Infof("github user id: %d", *user.ID)
 	email := user.GetEmail()

@@ -11,10 +11,15 @@ const CheckoutForm = () => {
       return;
     }
 
+    var baseURL = "http://localhost:8080"
+    if (process.env.REACT_APP_BASE_URL) {
+      baseURL = process.env.REACT_APP_BASE_URL
+    }
+
     const result = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: "http://localhost:8080/order/complete",
+        return_url: `${baseURL}/order/complete`,
       },
     });
 

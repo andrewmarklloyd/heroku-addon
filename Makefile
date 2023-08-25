@@ -7,7 +7,7 @@ build:
 	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/heroku-addon *.go
 
 build-frontend:
-	cd frontend; npm install; REACT_APP_STRIPE_PUBLIC_KEY=$(REACT_APP_STRIPE_PUBLIC_KEY) npm run build
+	cd frontend; npm install; REACT_APP_STRIPE_PUBLIC_KEY=$(REACT_APP_STRIPE_PUBLIC_KEY) REACT_APP_BASE_URL=$(REACT_APP_BASE_URL) npm run build
 
 build-ci: build build-frontend
 	cp ./bin/* .

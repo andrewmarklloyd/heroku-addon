@@ -145,7 +145,7 @@ func (s WebServer) handleChargeSucceeded(charge stripe.Charge) error {
 		Name:      instanceName,
 	}
 
-	s.logger.Info("provisioning instance", "stripe_customer", charge.Customer.ID, "account_id", a.UUID, "instance_id", instanceUUID)
+	s.logger.Infof("provisioning instance - (stripe customer: %s) (account id: %s) (instance id: %s)", charge.Customer.ID, a.UUID, instanceUUID)
 	err = s.postgresClient.CreateOrUpdateInstance(i)
 	if err != nil {
 		s.logger.Errorf("creating instance: %s", err)

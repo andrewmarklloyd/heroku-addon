@@ -200,28 +200,30 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	s.logger.Infof("github user id: %d", *user.ID)
+	fmt.Println(ctx)
 
-	if user.Email == nil {
+	s.logger.Infof("github user id: %d", *user.ID)
+	email := user.GetEmail()
+	if email == "" {
 		s.logger.Errorf("github user email is nil, cannot login")
 		http.Redirect(w, req, "/login", http.StatusFound)
 		return
 	}
 
-	if !strings.Contains(os.Getenv("AUTHORIZED_USERS"), *user.Email) {
-		s.logger.Errorf("non authorized user attempted login: %s", *user.Email)
+	if !strings.Contains(os.Getenv("AUTHORIZED_USERS"), email) {
+		s.logger.Errorf("non authorized user attempted login: %s", email)
 		http.Redirect(w, req, "/login", http.StatusFound)
 		return
 	}
 
-	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, *user.Email, string(account.AccountTypeGithub))
+	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, email, string(account.AccountTypeGithub))
 	if err != nil {
 		var noAcctErr *postgres.AccountNotFound
 		if errors.As(err, &noAcctErr) {
 			stripe.Key = s.stripeKey
 			params := &stripe.CustomerParams{
 				Name:  user.Name,
-				Email: stripe.String(*user.Email),
+				Email: stripe.String(email),
 				Metadata: map[string]string{
 					"hello": "world",
 				},
@@ -236,7 +238,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 			id := uuid.New().String()
 			a = account.Account{
 				UUID:         id,
-				Email:        *user.Email,
+				Email:        email,
 				Name:         *user.Name,
 				AccountType:  account.AccountTypeGithub,
 				AccessToken:  "",
@@ -258,7 +260,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	}
 
 	session := s.sessionStore.New("heroku-addon")
-	session.Set("user-email", *user.Email)
+	session.Set("user-email", email)
 	session.Set("user-id", a.UUID)
 	session.Set("user-name", a.Name)
 	session.Set("stripe-id", a.StripeCustID)

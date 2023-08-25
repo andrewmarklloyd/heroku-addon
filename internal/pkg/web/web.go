@@ -200,9 +200,8 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if user.ID == nil {
-		s.logger.Infof("github user id is nil")
-	}
+	s.logger.Infof("github user id: %d", *user.ID)
+
 	if user.Email == nil {
 		s.logger.Errorf("github user email is nil, cannot login")
 		http.Redirect(w, req, "/login", http.StatusFound)

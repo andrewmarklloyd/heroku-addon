@@ -200,6 +200,12 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if user == nil {
+		s.logger.Errorf("github user is nil, cannot login")
+		http.Redirect(w, req, "/login", http.StatusFound)
+		return
+	}
+
 	if !strings.Contains(os.Getenv("AUTHORIZED_USERS"), *user.Email) {
 		s.logger.Errorf("non authorized user attempted login: %s", *user.Email)
 		http.Redirect(w, req, "/login", http.StatusFound)

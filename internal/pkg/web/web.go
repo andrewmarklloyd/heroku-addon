@@ -71,7 +71,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 		ClientSecret: cfg.Github.ClientSecret,
 		RedirectURL:  cfg.Github.RedirectURL,
 		Endpoint:     githubOAuth2.Endpoint,
-		Scopes:       []string{"profile", "email"},
+		Scopes:       []string{"read:user", "user:email"},
 	}
 
 	// todo: make adding routes easier to see
@@ -154,6 +154,8 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
+	// 	const urlParams = new URLSearchParams(window.location.search);
+	// const myParam = urlParams.get('myParam');
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`<!DOCTYPE html>
 	<html lang="en">
@@ -186,6 +188,9 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 			<button class="button" onclick="window.location.href='https://elements.heroku.com/addons/alloyd-poc';">
 			Provision Addon in Heroku
 			</button>
+		</div>
+		<div id="login-failed">
+
 		</div>
 	  </body>
 	</html>

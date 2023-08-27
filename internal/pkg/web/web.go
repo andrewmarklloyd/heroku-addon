@@ -220,7 +220,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	email, err := getGithubUserEmail(ctx, token.AccessToken)
+	email, err := getGithubUserEmail(ctx, *token)
 	if err != nil {
 		s.errorLogAndRedirect(w, req, fmt.Sprintf("getting github user email: %s", err.Error()), "Could not user email from Github")
 		return

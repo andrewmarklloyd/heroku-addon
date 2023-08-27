@@ -10,9 +10,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func getGithubUserEmail(ctx context.Context, token string) (string, error) {
+func getGithubUserEmail(ctx context.Context, token oauth2.Token) (string, error) {
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
+		&token,
 	)
 	tc := oauth2.NewClient(ctx, ts)
 

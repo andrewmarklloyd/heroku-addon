@@ -154,8 +154,6 @@ func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
-	// 	const urlParams = new URLSearchParams(window.location.search);
-	// const myParam = urlParams.get('myParam');
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`<!DOCTYPE html>
 	<html lang="en">
@@ -189,10 +187,17 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 			Provision Addon in Heroku
 			</button>
 		</div>
-		<div id="login-failed">
-
-		</div>
+		<h2 id="login-failed-reason"></h2>
 	  </body>
+	  <script>
+	  	const urlParams = new URLSearchParams(window.location.search)
+		const reason = urlParams.get('reason')
+	  	if (reason) {
+			const el = document.getElementById("login-failed-reason")
+			el.style.display = "block";
+			el.innerHTML = "LOGIN FAILED<br/>" + reason;
+		}
+	  </script>
 	</html>
 	`))
 }

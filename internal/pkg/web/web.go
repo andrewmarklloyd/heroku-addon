@@ -196,30 +196,34 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	user, err := github.UserFromContext(ctx)
 	if err != nil {
-		s.logger.Errorf("getting user from context: %s", err)
-		http.Redirect(w, req, "/login", http.StatusFound)
+		s.errorLogAndRedirect(w, req, fmt.Sprintf("getting user from context: %s", err), "user authentication error")
 		return
 	}
 
 	token, err := oauth2Login.TokenFromContext(ctx)
 	if err != nil {
-		s.logger.Errorf("getting github token from context: %s", err.Error())
+		s.errorLogAndRedirect(w, req, fmt.Sprintf("getting github token from context: %s", err.Error()), "Could not get token from Github")
+		return
 	}
 	if token == nil {
-		s.logger.Errorf("github token is nil, cannot login")
+		s.errorLogAndRedirect(w, req, "github token is nil, cannot login", "Could not get token from Github")
+		return
 	}
 
-	s.logger.Infof("github user id: %d", *user.ID)
-	email := user.GetEmail()
+	email, err := getGithubUserEmail(ctx, token.AccessToken)
+	if err != nil {
+		s.errorLogAndRedirect(w, req, fmt.Sprintf("getting github user email: %s", err.Error()), "Could not user email from Github")
+		return
+	}
+
+	s.logger.Infof("github user id: %d", user.GetID())
 	if email == "" {
-		s.logger.Errorf("github user email is nil, cannot login")
-		http.Redirect(w, req, "/login", http.StatusFound)
+		s.errorLogAndRedirect(w, req, "no github user email found", "Could not user email from Github")
 		return
 	}
 
 	if !strings.Contains(os.Getenv("AUTHORIZED_USERS"), email) {
-		s.logger.Errorf("non authorized user attempted login: %s", email)
-		http.Redirect(w, req, "/login", http.StatusFound)
+		s.errorLogAndRedirect(w, req, fmt.Sprintf("non authorized user attempted login: %s", email), "User is not authorized")
 		return
 	}
 

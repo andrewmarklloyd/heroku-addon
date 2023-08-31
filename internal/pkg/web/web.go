@@ -226,15 +226,14 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	s.logger.Infof("github user id: %d", user.GetID())
-	if email == "" {
-		s.errorLogAndRedirect(w, req, "no github user email found", "Could not user email from Github")
-		return
-	}
-
 	if !strings.Contains(os.Getenv("AUTHORIZED_USERS"), email) {
 		s.errorLogAndRedirect(w, req, fmt.Sprintf("non authorized user attempted login: %s", email), "User is not authorized")
 		return
+	}
+
+	userName := user.GetName()
+	if userName == "" {
+		userName = "Username Unknown"
 	}
 
 	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, email, string(account.AccountTypeGithub))
@@ -243,7 +242,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 		if errors.As(err, &noAcctErr) {
 			stripe.Key = s.stripeKey
 			params := &stripe.CustomerParams{
-				Name:  user.Name,
+				Name:  stripe.String(userName),
 				Email: stripe.String(email),
 				Metadata: map[string]string{
 					"hello": "world",
@@ -260,7 +259,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 			a = account.Account{
 				UUID:         id,
 				Email:        email,
-				Name:         *user.Name,
+				Name:         userName,
 				AccountType:  account.AccountTypeGithub,
 				AccessToken:  "",
 				RefreshToken: "",

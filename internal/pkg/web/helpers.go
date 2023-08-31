@@ -15,14 +15,22 @@ func getGithubUserEmail(ctx context.Context, token oauth2.Token) (string, error)
 		&token,
 	)
 	tc := oauth2.NewClient(ctx, ts)
-
 	client := github.NewClient(tc)
-	user, _, err := client.Users.Get(ctx, "")
+
+	emails, _, err := client.Users.ListEmails(ctx, &github.ListOptions{
+		PerPage: 10,
+	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("listing user emails: %w", err)
 	}
 
-	return user.GetEmail(), nil
+	for _, userEmail := range emails {
+		if userEmail != nil && *userEmail.Primary {
+			return *userEmail.Email, nil
+		}
+	}
+
+	return "", fmt.Errorf("no primary email found")
 }
 
 func (s WebServer) errorLogAndRedirect(w http.ResponseWriter, req *http.Request, logMessage, reason string) {

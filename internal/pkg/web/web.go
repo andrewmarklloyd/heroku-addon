@@ -210,7 +210,7 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 
 func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	s.ddClient.Publish(ctx, datadog.MetricNameHerokuGithub, 1)
+	s.ddClient.Publish(ctx, datadog.MetricNameGithubLogin, 1)
 	user, err := github.UserFromContext(ctx)
 	if err != nil {
 		s.errorLogAndRedirect(w, req, fmt.Sprintf("getting user from context: %s", err), "user authentication error")

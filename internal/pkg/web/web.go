@@ -423,7 +423,7 @@ func (s WebServer) deprovisionHandler(w http.ResponseWriter, req *http.Request) 
 
 	vars := gmux.Vars(req)
 
-	s.logger.Infof("deleting addon resource_uuid: %s", vars["resource_uuid"])
+	s.logger.Info("deleting heroku addon instance", "resource_uuid", vars["resource_uuid"])
 
 	// delete instance
 	// keep account in case return customer?

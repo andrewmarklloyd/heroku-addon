@@ -32,7 +32,7 @@ func NewDatadogClient(apiKey string, testMode bool) Client {
 	}
 }
 
-func (c *Client) Publish(ctx context.Context, metricName string, metricValue float64) error {
+func (c *Client) Publish(ctx context.Context, metricName MetricName, metricValue float64) error {
 	valueCtx := context.WithValue(
 		ctx,
 		datadog.ContextAPIKeys,
@@ -46,7 +46,7 @@ func (c *Client) Publish(ctx context.Context, metricName string, metricValue flo
 	body := datadogV2.MetricPayload{
 		Series: []datadogV2.MetricSeries{
 			{
-				Metric: metricName,
+				Metric: string(metricName),
 				Type:   datadogV2.METRICINTAKETYPE_COUNT.Ptr(),
 				Points: []datadogV2.MetricPoint{
 					{

@@ -57,6 +57,8 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, `{"error":"error creating instance"}`, http.StatusInternalServerError)
 			return
 		}
+		fmt.Fprint(w, `{"status":"success","clientSecret":"free"}`)
+		return
 	}
 
 	pricePennies := account.LookupPricingPlan(ir.Plan).PriceDollars * 100

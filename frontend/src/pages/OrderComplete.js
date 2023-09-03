@@ -5,6 +5,11 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 const OrderComplete = () => {
     stripePromise.then((stripe) => {
         const clientSecret = new URLSearchParams(window.location.search).get('payment_intent_client_secret');
+        if (clientSecret === "free") {
+            const message = document.querySelector('#message')
+            message.innerText = 'Success! Your instance is being provisioned and will be ready soon. Check the instances page for details.';
+            return
+        }
 
         stripe.retrievePaymentIntent(clientSecret).then(({paymentIntent}) => {
             const message = document.querySelector('#message')

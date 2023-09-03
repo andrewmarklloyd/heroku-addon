@@ -95,6 +95,13 @@ const ConfirmInstance = (props) => {
     .then(r => r.json())
     .then(r => {
       if (r.status === 'success') {
+        if (r.clientSecret === "free") {
+          var baseURL = "http://localhost:8080"
+          if (process.env.REACT_APP_BASE_URL) {
+            baseURL = process.env.REACT_APP_BASE_URL
+          }
+          window.location.href = `${baseURL}/order/complete?payment_intent_client_secret=free`;
+        }
         setClientSecret(r.clientSecret)
       } else {
         alert("failed to create payment intent: " + r.error)

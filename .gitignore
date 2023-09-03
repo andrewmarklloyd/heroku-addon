@@ -2,3 +2,4 @@ addon-manifest.json
 client.sh
 bin/
 heroku-addon
+tmp/

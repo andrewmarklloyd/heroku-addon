@@ -44,6 +44,21 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if ir.Plan == string(account.PlanTypeFree) {
+		i := account.Instance{
+			AccountID: userInfo.UserID,
+			Id:        uuid.New().String(),
+			Plan:      string(account.PlanTypeFree),
+			Name:      ir.Name,
+		}
+		err = s.postgresClient.CreateOrUpdateInstance(i)
+		if err != nil {
+			s.logger.Errorf("creating instance: %s", err)
+			http.Error(w, `{"error":"error creating instance"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	pricePennies := account.LookupPricingPlan(ir.Plan).PriceDollars * 100
 	stripe.Key = s.stripeKey
 	params := &stripe.PaymentIntentParams{

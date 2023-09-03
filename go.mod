@@ -3,8 +3,10 @@ module github.com/andrewmarklloyd/heroku-addon
 go 1.20
 
 require (
+	github.com/DataDog/datadog-api-client-go/v2 v2.16.0
 	github.com/dghubble/gologin v2.1.0+incompatible
 	github.com/dghubble/sessions v0.4.0
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.10.9
@@ -14,8 +16,9 @@ require (
 )
 
 require (
+	github.com/DataDog/zstd v1.5.2 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect

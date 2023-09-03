@@ -1,6 +1,7 @@
 package config
 
 type Server struct {
+	TestMode        bool
 	Port            string
 	DBEncryptionKey string
 	PostgresURL     string
@@ -8,6 +9,7 @@ type Server struct {
 	Github          Github
 	Heroku          Heroku
 	Stripe          Stripe
+	Datadog         Datadog
 }
 
 type SessionSecret struct {
@@ -32,4 +34,8 @@ type Heroku struct {
 type Stripe struct {
 	Key                  string
 	WebhookSigningSecret string
+}
+
+type Datadog struct {
+	APIKey string
 }

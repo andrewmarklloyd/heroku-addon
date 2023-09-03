@@ -79,11 +79,17 @@ func BuildConfig() (Server, error) {
 		err = errors.Join(err, fmt.Errorf("STRIPE_WEBHOOK_SIGNING_SECRET env var is not set"))
 	}
 
+	ddApiKey := os.Getenv("DD_API_KEY")
+	if ddApiKey == "" {
+		err = errors.Join(err, fmt.Errorf("DD_API_KEY env var is not set"))
+	}
+
 	if err != nil {
 		return Server{}, err
 	}
 
 	return Server{
+		TestMode:        os.Getenv("TEST_MODE") == "true",
 		Port:            port,
 		DBEncryptionKey: encKey,
 		PostgresURL:     dbURL,
@@ -105,6 +111,9 @@ func BuildConfig() (Server, error) {
 		Stripe: Stripe{
 			Key:                  stripeKey,
 			WebhookSigningSecret: stripeWebhookSigningSecret,
+		},
+		Datadog: Datadog{
+			APIKey: ddApiKey,
 		},
 	}, nil
 }

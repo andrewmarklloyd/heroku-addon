@@ -12,6 +12,7 @@ import (
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/config"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/crypto"
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/heroku"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/provisioner"
@@ -46,6 +47,7 @@ type WebServer struct {
 	cryptoUtil                 crypto.Util
 	postgresClient             postgres.Client
 	herokuClient               heroku.HerokuClient
+	ddClient                   datadog.Client
 	sessionStore               sessions.Store[string]
 	logger                     *zap.SugaredLogger
 	stripeKey                  string
@@ -56,11 +58,13 @@ func NewWebServer(logger *zap.SugaredLogger,
 	cfg config.Server,
 	cryptoUtil crypto.Util,
 	postgresClient postgres.Client,
-	herokuClient heroku.HerokuClient) (WebServer, error) {
+	herokuClient heroku.HerokuClient,
+	ddClient datadog.Client) (WebServer, error) {
 	w := WebServer{
 		cryptoUtil:                 cryptoUtil,
 		postgresClient:             postgresClient,
 		herokuClient:               herokuClient,
+		ddClient:                   ddClient,
 		logger:                     logger,
 		stripeKey:                  cfg.Stripe.Key,
 		stripeWebhookSigningSecret: cfg.Stripe.WebhookSigningSecret,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/config"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/crypto"
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/heroku"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/web"
@@ -35,7 +36,9 @@ func main() {
 
 	herokuClient := heroku.NewHerokuClient(cfg.Heroku.ClientSecret, cfg.Heroku.AddonUsername, cfg.Heroku.AddonPassword, cfg.Heroku.SSOSalt)
 
-	webServer, err := web.NewWebServer(logger, cfg, cryptoUtil, postgresClient, herokuClient)
+	ddClient := datadog.NewDatadogClient(cfg.Datadog.APIKey, cfg.TestMode)
+
+	webServer, err := web.NewWebServer(logger, cfg, cryptoUtil, postgresClient, herokuClient, ddClient)
 	if err != nil {
 		logger.Fatalf("creating web server: %w", err)
 	}

@@ -97,7 +97,7 @@ const ConfirmInstance = (props) => {
       if (r.status === 'success') {
         setClientSecret(r.clientSecret)
       } else {
-        alert("failed to create payment intent: " + r)
+        alert("failed to create payment intent: " + r.error)
         return
       }
     })

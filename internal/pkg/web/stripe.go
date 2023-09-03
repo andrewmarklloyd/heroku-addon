@@ -18,7 +18,7 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 	userInfo, err := s.getUserInfo(req)
 	if err != nil {
 		s.logger.Errorf("getting user info: %s", err)
-		http.Error(w, "could not get user", http.StatusBadRequest)
+		http.Error(w, `{"error":"could not get user"}`, http.StatusBadRequest)
 		return
 	}
 

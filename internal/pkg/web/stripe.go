@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/datadog"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v75"
 	"github.com/stripe/stripe-go/v75/paymentintent"
@@ -112,6 +113,14 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+		MetricName:  "stripe.webhook_event",
+		MetricValue: 1,
+		Tags: map[string]string{
+			"type": event.Type,
+		},
+	})
 
 	switch event.Type {
 	case "charge.succeeded":

@@ -128,7 +128,13 @@ func NewWebServer(logger *zap.SugaredLogger,
 }
 
 func (s WebServer) herokuSSOHandler(w http.ResponseWriter, req *http.Request) {
-	s.ddClient.Publish(req.Context(), datadog.MetricNameHerokuLogin, 1)
+	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+		MetricName:  datadog.MetricNameLogin,
+		MetricValue: 1,
+		Tags: map[string]string{
+			"login_source": string(datadog.MetricTagHeroku),
+		},
+	})
 
 	ssoUser, err := s.herokuClient.ValidateSSO(req)
 	if err != nil {
@@ -210,7 +216,14 @@ func (s WebServer) tmpHandler(w http.ResponseWriter, req *http.Request) {
 
 func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	s.ddClient.Publish(ctx, datadog.MetricNameGithubLogin, 1)
+	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+		MetricName:  datadog.MetricNameLogin,
+		MetricValue: 1,
+		Tags: map[string]string{
+			"login_source": string(datadog.MetricTagGithub),
+		},
+	})
+
 	user, err := github.UserFromContext(ctx)
 	if err != nil {
 		s.errorLogAndRedirect(w, req, fmt.Sprintf("getting user from context: %s", err), "user authentication error")

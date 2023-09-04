@@ -32,7 +32,7 @@ func NewDatadogClient(apiKey string, testMode bool) Client {
 	}
 }
 
-func (c *Client) Publish(ctx context.Context, metricName MetricName, metricValue float64) error {
+func (c *Client) Publish(ctx context.Context, customMetric CustomMetric) error {
 	valueCtx := context.WithValue(
 		ctx,
 		datadog.ContextAPIKeys,
@@ -43,27 +43,36 @@ func (c *Client) Publish(ctx context.Context, metricName MetricName, metricValue
 		},
 	)
 
+	resources := []datadogV2.MetricResource{
+		{
+			Type: datadog.PtrString("source"),
+			Name: datadog.PtrString("heroku-addon"),
+		},
+		{
+			Type: datadog.PtrString("env"),
+			Name: datadog.PtrString(c.env),
+		},
+	}
+
+	for k, v := range customMetric.Tags {
+		resources = append(resources, datadogV2.MetricResource{
+			Type: datadog.PtrString(k),
+			Name: datadog.PtrString(v),
+		})
+	}
+
 	body := datadogV2.MetricPayload{
 		Series: []datadogV2.MetricSeries{
 			{
-				Metric: string(metricName),
+				Metric: string(customMetric.MetricName),
 				Type:   datadogV2.METRICINTAKETYPE_COUNT.Ptr(),
 				Points: []datadogV2.MetricPoint{
 					{
 						Timestamp: datadog.PtrInt64(time.Now().Unix()),
-						Value:     datadog.PtrFloat64(metricValue),
+						Value:     datadog.PtrFloat64(customMetric.MetricValue),
 					},
 				},
-				Resources: []datadogV2.MetricResource{
-					{
-						Type: datadog.PtrString("source"),
-						Name: datadog.PtrString("heroku-addon"),
-					},
-					{
-						Type: datadog.PtrString("env"),
-						Name: datadog.PtrString(c.env),
-					},
-				},
+				Resources: resources,
 			},
 		},
 	}

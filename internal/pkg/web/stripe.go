@@ -47,6 +47,14 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if ir.Plan == string(account.PlanTypeFree) {
+		s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+			MetricName:  datadog.MetricNameProvision,
+			MetricValue: 1,
+			Tags: map[string]string{
+				"type": "github",
+			},
+		})
+
 		i := account.Instance{
 			AccountID: userInfo.UserID,
 			Id:        uuid.New().String(),

@@ -38,7 +38,12 @@ func main() {
 
 	ddClient := datadog.NewDatadogClient(cfg.Datadog.APIKey, cfg.TestMode)
 
-	webServer, err := web.NewWebServer(logger, cfg, cryptoUtil, postgresClient, herokuClient, ddClient)
+	env := "prod"
+	if cfg.TestMode {
+		env = "test"
+	}
+
+	webServer, err := web.NewWebServer(logger, cfg, cryptoUtil, postgresClient, herokuClient, ddClient, env)
 	if err != nil {
 		logger.Fatalf("creating web server: %w", err)
 	}

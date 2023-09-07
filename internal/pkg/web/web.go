@@ -52,6 +52,7 @@ type WebServer struct {
 	logger                     *zap.SugaredLogger
 	stripeKey                  string
 	stripeWebhookSigningSecret string
+	env                        string
 }
 
 func NewWebServer(logger *zap.SugaredLogger,
@@ -59,7 +60,8 @@ func NewWebServer(logger *zap.SugaredLogger,
 	cryptoUtil crypto.Util,
 	postgresClient postgres.Client,
 	herokuClient heroku.HerokuClient,
-	ddClient datadog.Client) (WebServer, error) {
+	ddClient datadog.Client,
+	env string) (WebServer, error) {
 	w := WebServer{
 		cryptoUtil:                 cryptoUtil,
 		postgresClient:             postgresClient,
@@ -68,6 +70,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 		logger:                     logger,
 		stripeKey:                  cfg.Stripe.Key,
 		stripeWebhookSigningSecret: cfg.Stripe.WebhookSigningSecret,
+		env:                        env,
 	}
 
 	oauth2Config := &oauth2.Config{
@@ -266,7 +269,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 				Name:  stripe.String(userName),
 				Email: stripe.String(email),
 				Metadata: map[string]string{
-					"hello": "world",
+					"env": s.env,
 				},
 			}
 			cust, err := customer.New(params)

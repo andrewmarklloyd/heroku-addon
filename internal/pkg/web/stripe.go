@@ -83,6 +83,7 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 		Metadata: map[string]string{
 			"plan": ir.Plan,
 			"name": ir.Name,
+			"env":  s.env,
 		},
 	}
 	pi, err := paymentintent.New(params)

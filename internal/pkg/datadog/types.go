@@ -3,10 +3,11 @@ package datadog
 type MetricName string
 
 const (
-	MetricNameLogin          MetricName = "login"
-	MetricNameProvision      MetricName = "instance.provision"
-	MetricNameDeprovision    MetricName = "instance.deprovision"
-	MetricNameDeleteInstance MetricName = "instance.delete"
+	MetricNameLogin              MetricName = "login"
+	MetricNameProvision          MetricName = "instance.provision"
+	MetricNameDeprovision        MetricName = "instance.deprovision"
+	MetricNameDeleteInstance     MetricName = "instance.delete"
+	MetricNameStripeWebhookEvent MetricName = "stripe.webhook_event"
 )
 
 type MetricTag string

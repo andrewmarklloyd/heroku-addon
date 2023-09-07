@@ -125,7 +125,7 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 	}
 
 	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
-		MetricName:  "stripe.webhook_event",
+		MetricName:  datadog.MetricNameStripeWebhookEvent,
 		MetricValue: 1,
 		Tags: map[string]string{
 			"type": event.Type,

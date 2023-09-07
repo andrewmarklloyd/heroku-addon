@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -133,7 +134,7 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 			return
 		}
 
-		err = s.handleChargeSucceeded(charge)
+		err = s.handleChargeSucceeded(req.Context(), charge)
 		if err != nil {
 			s.logger.Errorf("handling charge succeeded: %s", err.Error())
 			w.WriteHeader(http.StatusBadRequest)
@@ -147,7 +148,15 @@ func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s WebServer) handleChargeSucceeded(charge stripe.Charge) error {
+func (s WebServer) handleChargeSucceeded(ctx context.Context, charge stripe.Charge) error {
+	s.ddClient.Publish(ctx, datadog.CustomMetric{
+		MetricName:  datadog.MetricNameProvision,
+		MetricValue: 1,
+		Tags: map[string]string{
+			"type": "github",
+		},
+	})
+
 	a, err := s.postgresClient.GetAccountFromStripeCustID(s.cryptoUtil, charge.Customer.ID)
 	if err != nil {
 		return fmt.Errorf("getting account from stripe customer id: %w", err)

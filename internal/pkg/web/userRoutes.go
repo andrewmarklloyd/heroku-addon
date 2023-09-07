@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/account"
-	"github.com/google/uuid"
+	"github.com/andrewmarklloyd/heroku-addon/internal/pkg/datadog"
 )
 
 func (s WebServer) getUser(w http.ResponseWriter, req *http.Request) {
@@ -53,53 +52,15 @@ func (s WebServer) getInstances(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(w, string(iJson))
 }
 
-func (s WebServer) newInstance(w http.ResponseWriter, req *http.Request) {
-	userInfo, err := s.getUserInfo(req)
-	if err != nil {
-		s.logger.Errorf("getting user info: %s", err)
-		http.Error(w, "could not get user", http.StatusBadRequest)
-		return
-	}
-
-	if userInfo.Provenance == "heroku" {
-		s.logger.Errorf("heroku user cannot create instances")
-		http.Error(w, `{"error":"heroku user cannot create instances"}`, http.StatusBadRequest)
-		return
-	}
-
-	type instanceRequest struct {
-		Name string `json:"name"`
-		Plan string `json:"plan"`
-	}
-	var ir instanceRequest
-	err = json.NewDecoder(req.Body).Decode(&ir)
-	if err != nil {
-		http.Error(w, `{"error":"parsing request"}`, http.StatusBadRequest)
-		return
-	}
-
-	if ir.Name == "" || ir.Plan == "" {
-		http.Error(w, `{"error":"name and plan are required"}`, http.StatusBadRequest)
-		return
-	}
-
-	i := account.Instance{
-		AccountID: userInfo.UserID,
-		Id:        uuid.New().String(),
-		Plan:      ir.Plan,
-		Name:      ir.Name,
-	}
-
-	err = s.postgresClient.CreateOrUpdateInstance(i)
-	if err != nil {
-		s.logger.Errorf("creating instance: %s", err)
-		http.Error(w, `{"error":"saving instance to database"}`, http.StatusBadRequest)
-		return
-	}
-	fmt.Fprint(w, `{"status":"success"}`)
-}
-
 func (s WebServer) deleteInstance(w http.ResponseWriter, req *http.Request) {
+	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+		MetricName:  datadog.MetricNameDeleteInstance,
+		MetricValue: 1,
+		Tags: map[string]string{
+			"type": "github",
+		},
+	})
+
 	userInfo, err := s.getUserInfo(req)
 	if err != nil {
 		s.logger.Errorf("getting user info: %s", err)

@@ -3,7 +3,10 @@ package datadog
 type MetricName string
 
 const (
-	MetricNameLogin MetricName = "login"
+	MetricNameLogin          MetricName = "login"
+	MetricNameProvision      MetricName = "instance.provision"
+	MetricNameDeprovision    MetricName = "instance.deprovision"
+	MetricNameDeleteInstance MetricName = "instance.delete"
 )
 
 type MetricTag string

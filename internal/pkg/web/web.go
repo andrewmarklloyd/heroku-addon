@@ -81,11 +81,13 @@ func NewWebServer(logger *zap.SugaredLogger,
 	// todo: make adding routes easier to see
 	router := gmux.NewRouter().StrictSlash(true)
 
+	// misc
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/login", http.HandlerFunc(w.tmpHandler)).Methods(get)
 
-	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHandler))).Methods(post)
-	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHandler))).Methods(delete)
+	// heroku
+	router.Handle("/heroku/resources", w.requireHerokuAuth(http.HandlerFunc(w.provisionHerokuHandler))).Methods(post)
+	router.Handle("/heroku/resources/{resource_uuid}", w.requireHerokuAuth(http.HandlerFunc(w.deprovisionHerokuHandler))).Methods(delete)
 
 	store := sessions.NewCookieStore[string](
 		sessions.DefaultCookieConfig,
@@ -104,7 +106,6 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/api/user", w.requireLogin(http.HandlerFunc(w.getUser))).Methods(get)
 	router.Handle("/api/pricing", http.HandlerFunc(w.getPricing)).Methods(get)
 	router.Handle("/api/instances", w.requireLogin(http.HandlerFunc(w.getInstances))).Methods(get)
-	router.Handle("/api/new-instance", w.requireLogin(http.HandlerFunc(w.newInstance))).Methods(post)
 	router.Handle("/api/delete-instance", w.requireLogin(http.HandlerFunc(w.deleteInstance))).Methods(post)
 	router.Handle("/api/create-payment-intent", w.requireLogin(http.HandlerFunc(w.newPaymentIntent))).Methods(post)
 	router.Handle("/stripe-webhooks", http.HandlerFunc(w.handleStripeWebhook)).Methods(post)
@@ -253,7 +254,7 @@ func (s WebServer) loginGithub(w http.ResponseWriter, req *http.Request) {
 
 	userName := user.GetName()
 	if userName == "" {
-		userName = "Username Unknown"
+		userName = "Github User"
 	}
 
 	a, err := s.postgresClient.GetAccountFromEmail(s.cryptoUtil, email, string(account.AccountTypeGithub))
@@ -356,8 +357,15 @@ func (s WebServer) requireLogin(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
+func (s WebServer) provisionHerokuHandler(w http.ResponseWriter, req *http.Request) {
 	s.logger.Infof("got request for new provisioning")
+	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+		MetricName:  datadog.MetricNameProvision,
+		MetricValue: 1,
+		Tags: map[string]string{
+			"type": "heroku",
+		},
+	})
 
 	var payload heroku.PlanProvisionPayload
 	err := json.NewDecoder(req.Body).Decode(&payload)
@@ -438,8 +446,15 @@ func (s WebServer) provisionHandler(w http.ResponseWriter, req *http.Request) {
 	}`, payload.UUID)))
 }
 
-func (s WebServer) deprovisionHandler(w http.ResponseWriter, req *http.Request) {
+func (s WebServer) deprovisionHerokuHandler(w http.ResponseWriter, req *http.Request) {
 	s.logger.Infof("got request to delete addon")
+	s.ddClient.Publish(req.Context(), datadog.CustomMetric{
+		MetricName:  datadog.MetricNameDeprovision,
+		MetricValue: 1,
+		Tags: map[string]string{
+			"type": "heroku",
+		},
+	})
 
 	vars := gmux.Vars(req)
 

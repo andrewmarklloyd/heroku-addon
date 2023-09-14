@@ -13,8 +13,63 @@ import (
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v75"
 	"github.com/stripe/stripe-go/v75/paymentintent"
+	"github.com/stripe/stripe-go/v75/subscription"
 	"github.com/stripe/stripe-go/v75/webhook"
 )
+
+func (s WebServer) createSubscription(w http.ResponseWriter, req *http.Request) {
+	userInfo, err := s.getUserInfo(req)
+	if err != nil {
+		s.logger.Errorf("getting user info: %s", err)
+		http.Error(w, `{"error":"could not get user"}`, http.StatusBadRequest)
+		return
+	}
+
+	if userInfo.Provenance == "heroku" {
+		s.logger.Errorf("heroku user cannot create payment intent")
+		http.Error(w, `{"error":"heroku user cannot create payment intent"}`, http.StatusBadRequest)
+		return
+	}
+
+	type instanceRequest struct {
+		Name string `json:"name"`
+		Plan string `json:"plan"`
+	}
+	var ir instanceRequest
+	err = json.NewDecoder(req.Body).Decode(&ir)
+	if err != nil {
+		http.Error(w, `{"error":"parsing request"}`, http.StatusBadRequest)
+		return
+	}
+
+	if ir.Name == "" || ir.Plan == "" {
+		http.Error(w, `{"error":"name and plan are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	pricingPlan := account.LookupPricingPlan(ir.Plan)
+	stripe.Key = s.stripeKey
+
+	subscriptionParams := &stripe.SubscriptionParams{
+		Customer: stripe.String(userInfo.StripeID),
+		Items: []*stripe.SubscriptionItemsParams{
+			{
+				Price: stripe.String(pricingPlan.PriceID),
+			},
+		},
+		PaymentBehavior: stripe.String("default_incomplete"),
+	}
+	subscriptionParams.AddExpand("latest_invoice.payment_intent")
+	sub, err := subscription.New(subscriptionParams)
+	if err != nil {
+		s.logger.Errorf("creating subscription %s", err.Error())
+		http.Error(w, `{"error":"error creating subscription"}`, http.StatusBadRequest)
+		return
+	}
+
+	// // sub.ID
+	fmt.Fprintf(w, `{"status":"success","clientSecret":"%s"}`, sub.LatestInvoice.PaymentIntent.ClientSecret)
+}
 
 func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 	userInfo, err := s.getUserInfo(req)
@@ -97,6 +152,10 @@ func (s WebServer) newPaymentIntent(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) handleStripeWebhook(w http.ResponseWriter, req *http.Request) {
+	if _, ok := os.LookupEnv("PROCESS_WEBHOOKS"); !ok {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	const MaxBodyBytes = int64(65536)
 	req.Body = http.MaxBytesReader(w, req.Body, MaxBodyBytes)
 	payload, err := io.ReadAll(req.Body)

@@ -111,6 +111,7 @@ func NewWebServer(logger *zap.SugaredLogger,
 	router.Handle("/api/instances", w.requireLogin(http.HandlerFunc(w.getInstances))).Methods(get)
 	router.Handle("/api/delete-instance", w.requireLogin(http.HandlerFunc(w.deleteInstance))).Methods(post)
 	router.Handle("/api/create-payment-intent", w.requireLogin(http.HandlerFunc(w.newPaymentIntent))).Methods(post)
+	router.Handle("/api/create-subscription", w.requireLogin(http.HandlerFunc(w.createSubscription))).Methods(post)
 	router.Handle("/stripe-webhooks", http.HandlerFunc(w.handleStripeWebhook)).Methods(post)
 
 	spa := spa.SpaHandler{

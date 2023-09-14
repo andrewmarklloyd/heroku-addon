@@ -42,17 +42,17 @@ type PricingPlan struct {
 var PricingPlans = []PricingPlan{
 	{
 		Name:         "free",
-		PriceID:      "price_1NhPmEGmaA1TfgH4aPVJx0LZ",
+		PriceID:      "price_1NpNZUGmaA1TfgH4vQUS0mw3",
 		PriceDollars: 0,
 	},
 	{
 		Name:         "staging",
-		PriceID:      "price_1NhPndGmaA1TfgH4imxsTGqA",
+		PriceID:      "price_1NpNZUGmaA1TfgH41kduGxJ8",
 		PriceDollars: 10,
 	},
 	{
 		Name:         "production",
-		PriceID:      "price_1NgKTiGmaA1TfgH4Fr6itojs",
+		PriceID:      "price_1NpNZUGmaA1TfgH4yXZg6urh",
 		PriceDollars: 35,
 	},
 }

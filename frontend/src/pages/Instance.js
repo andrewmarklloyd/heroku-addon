@@ -83,7 +83,7 @@ const ConfirmInstance = (props) => {
   
   const handleCreateInstance = () => {
     setCreateDisabled(true)
-    fetch("/api/create-payment-intent", {
+    fetch("/api/create-subscription", {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
